@@ -1,2 +1,8 @@
-# Homelab
-This is a repository of information related to Nathan Pavlovsky's system administration, networking, and cloud infrastructure homelabs
+| **Homelab Name** | **Date Published** | **Write-Up Link** | **Skills/Technologies Involved** | **Link To Applicable Code/Files** |
+| ------------ | -------------- | ------------- | ---------------------------- | ---------------------------------- |
+| **HomeLab #1: Linux Fundamentals with Ubuntu Server** | Oct 1, 2025 | [On Medium](https://secnate.medium.com/building-my-first-homelab-linux-fundamentals-with-ubuntu-server-3bbc342d5b94) | System Administration, Ubuntu Server, System Hardening, VirtualBox, Virtualization, UFW Firewall, Linux Command Line | N/A |
+| **Homelab #2: Windows Server Fundamentals With Active Directory** | Oct 9, 2025 | [On Medium](https://secnate.medium.com/homelab-2-windows-server-fundamentals-with-active-directory-147fe98a4878) | System Administration, Windows Server, System Hardening, Active Directory, VirtualBox, Virtualization, PowerShell | N/A |
+| **HomeLab #3: Basic Networking with Cisco Packet Tracer** | Oct 18, 2025 | [On Medium](https://secnate.medium.com/homelab-3-basic-networking-with-cisco-packet-tracer-59ce37cb2d63) | Cisco Packet Tracer, Network Administration, VLANs, Routing, DHCP, Cisco Switches & Routers | N/A |
+| **HomeLab #4: Ansible for Server Automation** | Oct 23, 2025 | [On Medium](https://secnate.medium.com/homelab-4-ansible-for-server-automation-0890845c89c7) | Ansible, System Administration, Ubuntu Server, System Hardening, VirtualBox, Virtualization | N/A |
+| **HomeLab #5: Virtualization with VMware ESXi** | Oct 29, 2025 | [On Medium](https://secnate.medium.com/homelab-5-virtualization-with-vmware-esxi-77740114c755) | VMware ESXi, Virtualization, System Administration, Resource Monitoring | N/A |
+| **Homelab #6: pfSense Firewall and Network Segmentation** | Nov 5, 2025 | [On Medium](https://secnate.medium.com/homelab-6-pfsense-firewall-and-network-segmentation-01159a2a73ae) | Networking, Firewall, pfSense, Virtualization, VirtualBox, DHCP, VLAN, LAN, WAN | N/A |
