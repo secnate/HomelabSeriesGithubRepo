@@ -1,0 +1,71 @@
+# We define the services (containers) in this compose project
+services:
+
+    # Prometheus
+    prometheus:
+      image: prom/prometheus:latest     # We get the latest prometheus image from Docker Hub
+      container_name: prometheus        # Name the cotnainer prometheus
+      restart: unless-stopped           # Container will restart automatically unless stopped explicitly with "docker stop" command
+      ports:
+        - "9090:9090"                   # Map the 9090 port on the host machine to the port 9090 inside the container
+      volumes:
+        # We create Volumes, which are persistent data stores for containers, created & managed by Docker
+        # Volumes in Docker store persisting data in containers, ensuring data persists even if the container is recreated
+        - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml    # Bind the locally-stored prometheus.yml file into the container
+        - ./prometheus/alert_rules.yaml:/etc/prometheus/alert_rules.yml  # Bind the locally-stored alert_rules.yml file into the container
+        # We create a named volume to /prometheus inside the container for storing time-series data. The data will persist even if the container is replicated
+        - prometheus-data:/prometheus 
+      # The command field overrides the default command declared by the container image
+      command:
+      - '--config.file=/etc/prometheus/prometheus.yml'                  # Specify the path of the configuration file to load
+      - '--storage.tsdb.path=/prometheus'                               # Sets the Prometheus data storage directory
+      - '--web.console.libraries=/etc/prometheus/console_libraries'     # A path for the Prometheus web console assets
+      - '--web.console.templates=/etc/prometheus/consoles'              # A path for the Prometheus web console assets
+      networks:                                                         #
+        - monitoring                                                    # Connects this service to the "monitoring" network
+
+    # Grafana
+    grafana:
+      image: grafana/grafana:latest
+      container_name: grafana
+      restart: unless-stopped
+      ports:
+        - "3000:3000"
+      # Per https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables, 
+      # configuring the Grafana container's environment variables
+      environment:                                                       # Set environment variables in the container
+        - GF_SECURITY_ADMIN_PASSWORD=admin                               # Set the default admin password to "admin"
+        - GF_USERS_ALLOW_SIGN_UP=false                                   # Disable user sign ups, restricting access
+      volumes:
+        - grafana-data:/var/lib/grafana                                  # Creating a persisting volume to /var/lib/grafana for persisting dashboards, plugins, & other data
+      networks:
+        - monitoring
+
+    # cAdvisor - monitors Docker containers
+    cadvisor:
+      image: gcr.io/cadvisor/cadvisor:latest
+      container_name: cadvisor
+      restart: unless-stopped                                             # Container will restart automatically unless stopped explicitly with "docker stop" command
+      ports:
+        - "8080:8080"                                                     # Map the 8080 port on the host machine to the port 8080 inside the container
+      # cAdvsisor needs to inspect and gather metrics from the host system and all other containers on the host, so we create read-only mounts to prevent the container
+      # from modifying or deleting the files on the host machine. The following mounted volumes from the host system are necessary to inspect and gather metrics from the host system
+      volumes:                                                            
+        - /:/rootfs:ro
+        - /var/run:/var/run:ro
+        - /sys:/sys:ro
+        - /var/lib/docker/:/var/lib/docker:ro
+        - /dev/disk/:/dev/disk:ro
+      privileged: true                                                     # Run the container in privileged mode, granting it elevated permissions (like access to host devices)
+      devices:                                                             # The "devices" keyword maps host devices to a container for direct access
+        - /dev/kmsg                                                        # We expose the host's "/dev/kmsg" device for the kernel internal logging system to the container
+      networks:
+        - monitoring
+  
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:                                                                   # Define persistent data stores for data for the prometheus and grafana containers so that data isn't lost
+  prometheus-data:                                                         # when the containers are stopped or removed
+  grafana-data:

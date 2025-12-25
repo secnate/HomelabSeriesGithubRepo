@@ -1,0 +1,46 @@
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration -- specifies Alertmanager instances the Prometheus server sends alerts to
+# It also provides parameters to configure how to communicate with these Alertmanagers
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Windows host metrics
+  - job_name: 'windows-host'
+    static_configs:
+      - targets: ['host.docker.internal:9182']
+        labels:
+          instance: 'windows-homelab'
+          environment: 'production'
+
+  # Ubuntu VM metrics
+  - job_name: 'ubuntu-vm'
+    static_configs:
+      - targets: ['192.168.100.253:9100'] # <--- I replaced the IP address here
+        labels:
+          instance: 'ubuntu-vm'
+          environment: 'production'
+
+  # Container metrics (cAdvisor)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          instance: 'docker-containers'
+    

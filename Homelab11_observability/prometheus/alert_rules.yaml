@@ -1,0 +1,72 @@
+groups:
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # High CPU Usage Alert (> 80%)
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(windows_cpu_time_total{mode="idle"}[5m])) * 100 ) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}% (threshhold: 80%)"
+
+      # Low Disk Space Alert (< 10%)
+      - alert: LowDiskSpace
+        expr: (windows_logical_disk_free_bytes / windows_logical_disk_size_bytes) * 100 < 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk {{ $labels.volume }} has {{ $value | humanize }}% free space"
+
+      # High memory Usage (> 85%)
+      - alert: HighMemoryUsage
+        expr: 100 - ((windows_os_physical_memory_free_bytes / windows_cs_physical_memory_bytes) * 100) > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | humanize }}%"
+
+      # Service Down Alert
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          # A "job" in Prometheus is basically a scraped target
+          # 
+          # More specifically per Prometheus documentation:
+          #
+          # "In Prometheus terms, an endpoint you can scrape is called an instance, 
+          #  usually corresponding to a single process. A collection of instances with
+          #  the same purpose, a process replicated for scalability or reliability for example, is called a job"
+          # https://prometheus.io/docs/concepts/jobs_instances/
+          #
+          summary: "Target {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} has been unreachable for more than 1 minute"
+
+      # Container High CPU
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} high CPU"
+          description: "Container CPU usage is above 80%"
+
+      # Container High Memory
+      - alert: Container High Memory
+        expr: (container_memory_usage_bytes{name != ""} / container_spec_memory_limit_bytes{name != ""}) * 100 > 85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} high memory"
+          description: "Container memory usage is above 85%"
