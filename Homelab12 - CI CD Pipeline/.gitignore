@@ -1,0 +1,35 @@
+# Python
+__pycache__
+*.pyc
+*.pyd
+.Python
+*.so
+pyenv
+
+
+# Project-Specific
+
+# Terraform (exclude generated files but keep .tf source code)
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+.terraform/
+
+# Keys and secrets (CRITICAL!)
+keys/
+
+# Other folders
+venv/
+deactivate/
+Lib/
+Include/
+scripts/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
