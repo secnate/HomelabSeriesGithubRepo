@@ -1,0 +1,217 @@
+// Jenksinfile.azure defines a pipeline for the Azure cloud provider
+
+
+pipeline {
+    // We specify that we are open to having the Jenkins pipeline run on any
+    // available agent. 
+    // 
+    // Per Jenkins's Glossary at https://www.jenkins.io/doc/book/glossary/,
+    // an agent "is typically a machine, or container, which connects to a Jenkins controller 
+    // and executes tasks when directed by the controller"
+    agent any
+
+    // Environment variables in Jenkinsfiles "store configuration settings, credentials,
+    // and other dynamic values [that can be] used during build and deployment processes"
+    // per https://spacelift.io/blog/jenkins-environment-variables
+    environment {
+        APP_NAME = "flask-app"
+        DOCKER_HUB_USERNAME = "nathanpavl"
+        DOCKER_IMAGE_NAME = "${DOCKER_HUB_USERNAME}/${APP_NAME}"
+        DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
+        CLOUD_PROVIDER = "Azure"
+        PROJECT_DIR = "Homelab12 - CI CD Pipeline"
+    }
+
+    stages {
+
+        stage ('Checkout') {
+            steps {
+                echo "Checking out the code from GitHub"
+                // The checkout step will checkout code from source control; 
+                // scm is a special variable which instructs the checkout step 
+                // to clone the specific revision which triggered this Pipeline run.
+                //
+                // Per https://www.jenkins.io/doc/book/pipeline/jenkinsfile/
+                checkout scm
+            }
+        }
+
+        stage ("Build Docker Image") {
+            
+            steps {
+                // Here we specify the steps for building the Docker image locally
+                echo "Building the Docker Image"
+                script {
+                    dir("${PROJECT_DIR}") {
+                        // We build the docker container image
+                        sh 'docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .'
+                        // And tag the image with the "latest" image
+                        sh 'docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest'
+                    }
+                }
+            }
+        }
+
+        stage('Test Docker Image Locally') {
+            // Spining up a test Docker image and then testing it
+            steps {
+                echo "Testing the Docker Image Locally"
+                script {
+                    sh '''
+                    docker run -d -p 5001:5000 --name test-flask ${IMAGE_NAME}:${IMAGE_TAG}
+                    timeout /t 10 /nobreak
+                    curl http://localhost:5001 || echo "Warning: Could not reach app"
+                    docker stop test-flask
+                    docker rm test-flask
+                    '''
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                echo "Pushing Image to Docker Hub"
+                script {
+                    // Here we bind credentials. To simply explain, it means using the "Credentials Binding plugin"
+                    // [via the "withCredentials" step] to securely inject secrets (passwords, keys, tokens)
+                    // from Jenkins' credential store into ***temporary*** environment variables, making them available
+                    // ***ONLY*** within the specific block of the pipeline script, instead of hard-coding them directly
+                    //
+                    // Such credential binding helps prevent the need for hard-coding them directly 
+                    // and prevents exposure in logs or source code
+                    // See https://www.jenkins.io/doc/pipeline/steps/credentials-binding/ for more information
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable : 'DOCKER_USER', passwordVariable: 'DOCKER_PASS']) {
+                        sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                        sh 'docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}'
+                        sh 'docker push ${DOCKER_IMAGE_NAME}:latest'
+                    }
+                }
+            }
+        }
+
+        stage('Infracost Estimate') {
+            // Here we estimate the cost of such infrastructure being done
+            steps {
+                echo "Estimating Infrastructure Costs"
+                script {
+                    dir("${PROJECT_DIR}/terraform/aws") {
+                        sh '''
+                        infracost breakdown --path . --format table || echo "Infracost not available, skipping..."
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage("Terraform Init & Plan") {
+            steps {
+                echo "Initializing and planning Terraform"
+                script {
+                    // Here we bind credentials. To simply explain, it means using the "Credentials Binding plugin"
+                    // [via the "withCredentials" step] to securely inject secrets (passwords, keys, tokens)
+                    // from Jenkins' credential store into ***temporary*** environment variables, making them available
+                    // ***ONLY*** within the specific block of the pipeline script, instead of hard-coding them directly
+                    //
+                    // Such credential binding helps prevent the need for hard-coding them directly 
+                    // and prevents exposure in logs or source code
+                    // See https://www.jenkins.io/doc/pipeline/steps/credentials-binding/ for more information
+                    dir("${PROJECT_DIR}/terraform/aws") {
+                        withCredentials([
+                            usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
+                            string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
+                            string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
+                        ]) {
+                            sh 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
+                            sh 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
+                            sh 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
+                            sh 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
+
+                            sh 'terraform init -reconfigure'
+                            sh 'terraform plan -out=tfplan'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Terraform Infrastructure') { 
+            steps {
+                echo "Deploying the infrastructure to AWS!"
+                script {
+                    withCredentials([
+                            usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
+                            string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
+                            string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
+                        ]) {
+                            sh 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
+                            sh 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
+                            sh 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
+                            sh 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
+
+                            sh 'terraform apply-auto-approve tfplan'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Application to Azure VM') { 
+            steps {
+                echo "Deploying the infrastructure to Azure VM!"
+                script {
+                    dir("${PROJECT_DIR}/terraform/azure") {
+                        withCredentials([
+                            usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
+                            string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
+                            string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
+                        ]) {
+                            sh 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
+                            sh 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
+                            sh 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
+                            sh 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
+
+                            def vmIP = sh(terraform output -raw instance_public_ip, returnStdout: true).trim()
+
+                            echo "Deploying to ${$vmIP}"
+
+                            // Need to wait for instance to be ready
+                            sh 'timeout /t 30 /nobreak'
+
+                            // Deploying using SSH Agent plugin --> https://plugins.jenkins.io/ssh-agent/
+                            // The sshagent step in a Jenkinsfile is used to provide SSH credentials to a 
+                            // build process securely. It does this by starting an ssh-agent helper program 
+                            // and loading the specified private key credentials into it, making them available 
+                            // for subsequent SSH or SCP commands within the same block
+                            sshagent(['aws-ssh-key']) {
+                                sh '''
+                                    ssh -o StrictHostKeyChecking=no azureuser@{vmIP} "sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${IMAGE_NAME}:${IMAGE_TAG}"
+                                '''
+                            }
+
+                            echo "Application deployed successfully!"
+                            echo "Access at: http://${vmIP}:5000"
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    // Actions to be perofmred after the main stages of the pipeline are finished
+    post {
+        success {
+            echo -e "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has succesfully completed!"
+        }
+        failure {
+            echo -e "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has failed!"
+        }
+        always {
+            // This will always happen, no matter what the case
+            //
+            // We force Docker to remove all unused containers, networks, images (both dangling and unused), and optionally, volumes
+            // See the following documentation page for further details: https://docs.docker.com/reference/cli/docker/system/prune/
+            sh 'docker system prune -f'
+        }
+    }
+}
