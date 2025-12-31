@@ -187,23 +187,17 @@ pipeline {
     // Actions to be perofmred after the main stages of the pipeline are finished
     post {
         success {
-            script {
-                echo -e "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has succesfully completed!"
-            }
+            echo "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has succesfully completed!"
         }
         failure {
-            script {
-                echo -e "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has failed!"
-            }
+            echo  "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has failed!"
         }
         always {
             // This will always happen, no matter what the case
             //
             // We force Docker to remove all unused containers, networks, images (both dangling and unused), and optionally, volumes
             // See the following documentation page for further details: https://docs.docker.com/reference/cli/docker/system/prune/
-            script {
-                sh 'docker system prune -f'
-            }
+            sh 'docker system prune -f'
         }
     }
 }
