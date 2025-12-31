@@ -41,9 +41,9 @@ pipeline {
                 script {
                     dir("${PROJECT_DIR}") {
                         // We build the docker container image
-                        bat 'docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .'
+                        bat 'docker build -t %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% .'
                         // And tag the image with the "latest" image
-                        bat 'docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest'
+                        bat 'docker tag %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% %DOCKER_IMAGE_NAME%:latest'
                     }
                 }
             }
@@ -54,7 +54,7 @@ pipeline {
                 echo "Testing the Docker Image Locally"
                 script {
                     bat '''
-                    docker run -d -p 5001:5000 --name test-flask ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker run -d -p 5001:5000 --name test-flask %IMAGE_NAME%:%IMAGE_TAG%
                     timeout /t 10 /nobreak
                     curl http://localhost:5001 || echo "Warning: Could not reach app"
                     docker stop test-flask
@@ -78,8 +78,8 @@ pipeline {
                     // See https://www.jenkins.io/doc/pipeline/steps/credentials-binding/ for more information
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable : 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
-                        bat 'docker pubat ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}'
-                        bat 'docker pubat ${DOCKER_IMAGE_NAME}:latest'
+                        bat 'docker pubat %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%'
+                        bat 'docker pubat %DOCKER_IMAGE_NAME%:latest'
                     }
                 }
             }
@@ -116,8 +116,8 @@ pipeline {
                             string(credentialsId: 'aws-access-key-id', variable: "AWS_ACCESS_KEY_ID"),
                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                         ]) {
-                            bat 'set AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
-                            bat 'set AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
+                            bat 'set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%'
+                            bat 'set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%'
                             bat 'terraform init -reconfigure'
                             bat 'terraform plan -out=tfplan'
                         }
@@ -136,8 +136,8 @@ pipeline {
                             string(credentialsId: 'aws-access-key-id', variable: "AWS_ACCESS_KEY_ID"),
                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                         ]) {
-                            bat 'set AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
-                            bat 'set AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
+                            bat 'set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%'
+                            bat 'set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%'
                             bat 'terraform apply-auto-approve tfplan'
                         }
                     }
@@ -154,8 +154,8 @@ pipeline {
                             string(credentialsId: 'aws-access-key-id', variable: "AWS_ACCESS_KEY_ID"),
                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                         ]) {
-                            bat 'set AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
-                            bat 'set AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
+                            bat 'set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%'
+                            bat 'set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%'
                             def instanceIP = sh(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
 
                             echo "Deploying to ${$instanceIP}"
@@ -170,7 +170,7 @@ pipeline {
                             // for subsequent Sbat or SCP commands within the same block
                             sshagent(['aws-ssh-key']) {
                                 bat '''
-                                    sbat -o StrictHostKeyChecking=no ec2-user@{instanceIP} "sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${IMAGE_NAME}:${IMAGE_TAG}"
+                                    sbat -o StrictHostKeyChecking=no ec2-user@{instanceIP} "sudo docker pull %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% && sudo docker stop %APP_NAME% || true && sudo docker rm %APP_NAME% || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=%CLOUD_PROVIDER% --name %APP_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
                                 '''
                             }
 
