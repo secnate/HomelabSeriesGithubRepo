@@ -41,7 +41,7 @@ pipeline {
                 script {
                     dir("${PROJECT_DIR}") {
                         // We build the docker container image
-                        sh 'ls -l' // Test line here
+                        bat 'dir' // Test line here
 
                         bat 'docker build -t %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% .'
                         // And tag the image with the "latest" image
