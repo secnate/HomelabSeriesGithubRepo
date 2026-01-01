@@ -25,7 +25,7 @@ pipeline {
         stage ('Checkout') {
             steps {
                 bat '''echo %PATH%'''
-                
+
                 echo "Checking out the code from GitHub"
                 // The checkout step will checkout code from source control; 
                 // scm is a special variable which instructs the checkout step 
@@ -58,7 +58,7 @@ pipeline {
                     dir("${PROJECT_DIR}") {
                         bat '''
                         docker run -d -p 5001:5000 --name test-flask %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%
-                        ping -n 31 127.0.0.1 > nul
+                        timeout /t 30 /nobreak
                         curl http://localhost:5001 || echo "Warning: Could not reach app"
                         docker stop test-flask
                         docker rm test-flask
@@ -166,7 +166,7 @@ pipeline {
                             echo "Deploying to ${instanceIP}"
 
                             // Need to wait for instance to be ready
-                            bat 'ping -n 31 127.0.0.1 > nul'
+                            bat 'timeout /t 30 /nobreak'
 
                             // Deploying using Sbat Agent plugin --> https://plugins.jenkins.io/ssh-agent/
                             // The sshagent step in a Jenkinsfile is used to provide Sbat credentials to a 
