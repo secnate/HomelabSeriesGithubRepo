@@ -161,7 +161,7 @@ pipeline {
                             bat 'set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%'
                             def instanceIP = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
 
-                            echo "Deploying to ${$instanceIP}"
+                            echo "Deploying to ${instanceIP}"
 
                             // Need to wait for instance to be ready
                             bat 'timeout /t 30 /nobreak'
