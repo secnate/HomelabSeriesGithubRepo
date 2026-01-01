@@ -86,7 +86,6 @@ pipeline {
                 }
             }
         }
-        /*
         stage('Infracost Estimate') {
             // Here we estimate the cost of such infrastructure being done
             steps {
@@ -128,7 +127,7 @@ pipeline {
             }
         }
 
-        
+        /*
         stage('Deploy Terraform Infrastructure') { 
             steps {
                 echo "Deploying the infrastructure to AWS!"
