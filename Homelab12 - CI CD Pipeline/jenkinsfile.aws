@@ -103,6 +103,7 @@ pipeline {
             }
         }
 
+        /*
         stage("Terraform Init & Plan") {
             steps {
                 echo "Initializing and planning Terraform"
@@ -128,7 +129,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
 
         /*
         stage('Deploy Terraform Infrastructure') { 
