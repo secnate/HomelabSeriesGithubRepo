@@ -164,7 +164,7 @@ pipeline {
                             echo "Deploying to ${instanceIP}"
 
                             // Need to wait for instance to be ready
-                            bat 'timeout /t 30 /nobreak'
+                            bat 'powershell.exe -Command "Start-Sleep -Seconds 10"'
 
                             // Deploying using Sbat Agent plugin --> https://plugins.jenkins.io/ssh-agent/
                             // The sshagent step in a Jenkinsfile is used to provide Sbat credentials to a 
