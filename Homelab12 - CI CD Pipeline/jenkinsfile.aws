@@ -78,7 +78,7 @@ pipeline {
                     // and prevents exposure in logs or source code
                     // See https://www.jenkins.io/doc/pipeline/steps/credentials-binding/ for more information
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable : 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        bat 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                        bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
 
                         bat 'docker push %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%'
                         bat 'docker push %DOCKER_IMAGE_NAME%:latest'
