@@ -176,7 +176,7 @@ pipeline {
                                 retry(20) {
                                     sleep(time: 15, unit: 'SECONDS')  // Wait 15s between attempts
                                     bat """
-                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%instanceIP% "ls -l"
+                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@${instanceIP} "ls -l"
                                     """
                                     echo "SSH is now ready!"
                                 }
