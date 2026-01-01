@@ -130,7 +130,6 @@ pipeline {
             }
         }
 
-        /*
         stage('Deploy Terraform Infrastructure') { 
             steps {
                 echo "Deploying the infrastructure to AWS!"
@@ -184,8 +183,7 @@ pipeline {
                     }
                 }
             }
-        }*/
-
+        }
     }
 
     // Actions to be perofmred after the main stages of the pipeline are finished
