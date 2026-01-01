@@ -65,7 +65,6 @@ pipeline {
                 }
             }
         }
-        /*
         stage('Push to Docker Hub') {
             steps {
                 echo "Pushing Image to Docker Hub"
@@ -86,7 +85,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
         /*
         stage('Infracost Estimate') {
             // Here we estimate the cost of such infrastructure being done
