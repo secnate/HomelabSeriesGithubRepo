@@ -161,7 +161,8 @@ pipeline {
                     dir("${PROJECT_DIR}/terraform/aws") {
                         withCredentials([
                             string(credentialsId: 'aws-access-key-id', variable: "AWS_ACCESS_KEY_ID"),
-                            string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                            string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                            string(credentialsId: 'aws-ssh-key', variable: 'AWS_SSH_KEY')
                         ]) {
                             bat 'set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%'
                             bat 'set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%'
@@ -172,16 +173,9 @@ pipeline {
                             // Need to wait for instance to be ready
                             bat "ping -n 31 127.0.0.1 > nul"
 
-                            // Deploying using SSH Agent plugin --> https://plugins.jenkins.io/ssh-agent/
-                            // The sshagent step in a Jenkinsfile is used to provide Sbat credentials to a 
-                            // build process securely. It does this by starting an ssh-agent helper program 
-                            // and loading the specified private key credentials into it, making them available 
-                            // for subsequent Sbat or SCP commands within the same block
-                            sshagent(['aws-ssh-key']) {
-                                bat '''
-                                    ssh -o StrictHostKeyChecking=no ec2-user@{instanceIP} "sudo docker pull %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% && sudo docker stop %APP_NAME% || true && sudo docker rm %APP_NAME% || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=%CLOUD_PROVIDER% --name %APP_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+                            bat '''
+                                ssh -o StrictHostKeyChecking=no ec2-user@{instanceIP} "sudo docker pull %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% && sudo docker stop %APP_NAME% || true && sudo docker rm %APP_NAME% || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=%CLOUD_PROVIDER% --name %APP_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
                                 '''
-                            }
 
                             echo "Application deployed successfully!"
                             echo "Access at: http://${instanceIP}:5000"
