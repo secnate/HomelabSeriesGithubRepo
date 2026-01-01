@@ -56,7 +56,7 @@ pipeline {
                     dir("${PROJECT_DIR}") {
                         bat '''
                         docker run -d -p 5001:5000 --name test-flask %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%
-                        powershell.exe -Command "Start-Sleep -Seconds 10"
+                        ping -n 31 127.0.0.1 > nul
                         curl http://localhost:5001 || echo "Warning: Could not reach app"
                         docker stop test-flask
                         docker rm test-flask
@@ -164,7 +164,7 @@ pipeline {
                             echo "Deploying to ${instanceIP}"
 
                             // Need to wait for instance to be ready
-                            bat 'powershell.exe -Command "Start-Sleep -Seconds 10"'
+                            bat 'ping -n 31 127.0.0.1 > nul'
 
                             // Deploying using Sbat Agent plugin --> https://plugins.jenkins.io/ssh-agent/
                             // The sshagent step in a Jenkinsfile is used to provide Sbat credentials to a 
