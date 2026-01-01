@@ -141,7 +141,7 @@ pipeline {
                         ]) {
                             bat 'set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%'
                             bat 'set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%'
-                            bat 'terraform apply-auto-approve tfplan'
+                            bat 'terraform apply -auto-approve tfplan'
                         }
                     }
                 }
