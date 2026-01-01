@@ -21,7 +21,7 @@ pipeline {
 
         // We make the Jenkins AWS pipeline see the paths to the  following folders, in addition to whatever system PATH Jenkins already has
         // This environment block at the pipeline level prepends your tool paths and keeps the original ${env.PATH} — safe and scoped only to this pipeline
-        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Infracost;C:\\Program Files\\Terraform;" + "${env.PATH}"
+        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Infracost;C:\\Program Files\\Terraform;C:\\Windows\\System32\\OpenSSH;" + "${env.PATH}"
     }
 
     stages {
@@ -172,7 +172,7 @@ pipeline {
                             // Need to wait for instance to be ready
                             bat "ping -n 31 127.0.0.1 > nul"
 
-                            // Deploying using Sbat Agent plugin --> https://plugins.jenkins.io/ssh-agent/
+                            // Deploying using SSH Agent plugin --> https://plugins.jenkins.io/ssh-agent/
                             // The sshagent step in a Jenkinsfile is used to provide Sbat credentials to a 
                             // build process securely. It does this by starting an ssh-agent helper program 
                             // and loading the specified private key credentials into it, making them available 
