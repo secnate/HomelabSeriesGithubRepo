@@ -159,7 +159,7 @@ pipeline {
                         ]) {
                             bat 'set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%'
                             bat 'set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%'
-                            def instanceIP = sh(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
+                            def instanceIP = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
 
                             echo "Deploying to ${$instanceIP}"
 
@@ -173,7 +173,7 @@ pipeline {
                             // for subsequent Sbat or SCP commands within the same block
                             sshagent(['aws-ssh-key']) {
                                 bat '''
-                                    sbat -o StrictHostKeyChecking=no ec2-user@{instanceIP} "sudo docker pull %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% && sudo docker stop %APP_NAME% || true && sudo docker rm %APP_NAME% || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=%CLOUD_PROVIDER% --name %APP_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+                                    ssh -o StrictHostKeyChecking=no ec2-user@{instanceIP} "sudo docker pull %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% && sudo docker stop %APP_NAME% || true && sudo docker rm %APP_NAME% || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=%CLOUD_PROVIDER% --name %APP_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
                                 '''
                             }
 
