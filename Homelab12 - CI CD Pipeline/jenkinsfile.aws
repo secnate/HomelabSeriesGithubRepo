@@ -91,10 +91,13 @@ pipeline {
             steps {
                 echo "Estimating Infrastructure Costs"
                 script {
-                    dir("${PROJECT_DIR}/terraform/aws") {
-                        bat '''
-                        infracost breakdown --path . --format table || echo "Infracost not available, skipping..."
-                        '''
+                    withCredentials([string(credentialsId: 'Infracost-API-Key', variable: 'INFRACOST_API_KEY')]) {
+                        // The 'INFRACOST_API_KEY' environment variable is available ONLY inside this block
+                        dir("${PROJECT_DIR}/terraform/aws") {
+                            bat '''
+                            infracost breakdown --path . --format table || echo "Infracost not available, skipping..."
+                            '''
+                        }
                     }
                 }
             }
@@ -186,7 +189,6 @@ pipeline {
 
     }
 
-    /*
     // Actions to be perofmred after the main stages of the pipeline are finished
     post {
         success {
@@ -202,5 +204,5 @@ pipeline {
             // See the following documentation page for further details: https://docs.docker.com/reference/cli/docker/system/prune/
             bat 'docker system prune -f'
         }
-    }*/
+    }
 }
