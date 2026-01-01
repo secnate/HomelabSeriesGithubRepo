@@ -80,10 +80,8 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable : 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
 
-                        FIX FIX
-                        bat 'docker pubat %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%'
-                        FIX FIX
-                        bat 'docker pubat %DOCKER_IMAGE_NAME%:latest'
+                        bat 'docker push %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%'
+                        bat 'docker push %DOCKER_IMAGE_NAME%:latest'
                     }
                 }
             }
