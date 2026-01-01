@@ -24,6 +24,8 @@ pipeline {
 
         stage ('Checkout') {
             steps {
+                bat '''echo %PATH%'''
+                
                 echo "Checking out the code from GitHub"
                 // The checkout step will checkout code from source control; 
                 // scm is a special variable which instructs the checkout step 
