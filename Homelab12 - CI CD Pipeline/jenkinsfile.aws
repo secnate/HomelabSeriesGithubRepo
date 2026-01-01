@@ -55,7 +55,7 @@ pipeline {
                 script {
                     dir("${PROJECT_DIR}") {
                         bat '''
-                        docker run -d -p 5001:5000 --name test-flask %IMAGE_NAME%:%IMAGE_TAG%
+                        docker run -d -p 5001:5000 --name test-flask %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%
                         timeout /t 10 /nobreak
                         curl http://localhost:5001 || echo "Warning: Could not reach app"
                         docker stop test-flask

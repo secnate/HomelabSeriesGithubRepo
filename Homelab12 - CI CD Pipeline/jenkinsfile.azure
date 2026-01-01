@@ -24,6 +24,7 @@ pipeline {
 
     stages {
 
+        /*
         stage ('Checkout') {
             steps {
                 echo "Checking out the code from GitHub"
@@ -195,9 +196,11 @@ pipeline {
                 }
             }
         }
+        */
 
     }
 
+    /*
     // Actions to be perofmred after the main stages of the pipeline are finished
     post {
         success {
@@ -214,4 +217,5 @@ pipeline {
             sh 'docker system prune -f'
         }
     }
+    */
 }
