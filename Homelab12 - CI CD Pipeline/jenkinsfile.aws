@@ -33,6 +33,7 @@ pipeline {
                 checkout scm
             }
         }
+        /*
         stage ("Build Docker Image") {
             
             steps {
@@ -41,7 +42,7 @@ pipeline {
                 script {
                     dir("${PROJECT_DIR}") {
                         // We build the docker container image
-                        bat 'docker build -t %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% .'
+                        bat 'docker build -t %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% ./%PROJECT_DIR%'
                         // And tag the image with the "latest" image
                         bat 'docker tag %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% %DOCKER_IMAGE_NAME%:latest'
                     }
@@ -78,7 +79,10 @@ pipeline {
                     // See https://www.jenkins.io/doc/pipeline/steps/credentials-binding/ for more information
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable : 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+
+                        FIX FIX
                         bat 'docker pubat %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%'
+                        FIX FIX
                         bat 'docker pubat %DOCKER_IMAGE_NAME%:latest'
                     }
                 }
@@ -200,4 +204,5 @@ pipeline {
             bat 'docker system prune -f'
         }
     }
+    */
 }
