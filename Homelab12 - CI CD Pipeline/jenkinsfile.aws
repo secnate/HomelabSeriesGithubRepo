@@ -174,7 +174,7 @@ pipeline {
                             bat "ping -n 31 127.0.0.1 > nul"
 
                             bat '''
-                                ssh -o -i ${SSH_KEY_FILE} StrictHostKeyChecking=no ec2-user@{instanceIP} "sudo docker pull %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% && sudo docker stop %APP_NAME% || true && sudo docker rm %APP_NAME% || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=%CLOUD_PROVIDER% --name %APP_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+                                ssh -o -i %SSH_KEY_FILE% StrictHostKeyChecking=no ec2-user@%instanceIP% "sudo docker pull %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% && sudo docker stop %APP_NAME% || true && sudo docker rm %APP_NAME% || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=%CLOUD_PROVIDER% --name %APP_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
                                 '''
 
                             echo "Application deployed successfully!"
