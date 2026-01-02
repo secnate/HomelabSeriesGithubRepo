@@ -164,6 +164,16 @@ pipeline {
                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
                             sshUserPrivateKey(credentialsId: 'aws-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USERNAME')
                         ]) {
+
+                            // Restrict access to the SSH KEY FILE to only the user running the Jenkins agent
+                            // This is intended to allow the SSH operation to go through
+                            bat """
+                                icacls "%SSH_KEY_FILE%" /reset
+                                icacls "%SSH_KEY_FILE%" /grant:r "%USERNAME%:F"
+                                icacls "%SSH_KEY_FILE%" /inheritance:r
+                            """
+
+                            // Now we get the IP to work with
                             def instanceIP = bat(script: "@terraform output -raw instance_public_ip", returnStdout: true).trim()
 
                             echo "Deploying to ${instanceIP}"
