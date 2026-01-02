@@ -177,6 +177,8 @@ pipeline {
                             def instanceIP = bat(script: "@terraform output -raw instance_public_ip", returnStdout: true).trim()
 
                             echo "Deploying to ${instanceIP}"
+
+                            // This line is to be deleted
                             echo "DEBUG - another test --> Deploying to ${instanceIP}"
 
                             // Need to wait for instance to be ready
