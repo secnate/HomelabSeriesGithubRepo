@@ -17,7 +17,6 @@ pipeline {
         DOCKER_IMAGE_NAME = "${DOCKER_HUB_USERNAME}/${APP_NAME}"
         DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
         CLOUD_PROVIDER = "AWS"
-        CREAT
         PROJECT_DIR = "Homelab12 - CI CD Pipeline"
 
         // We make the Jenkins AWS pipeline see the paths to the  following folders, in addition to whatever system PATH Jenkins already has
@@ -176,7 +175,7 @@ pipeline {
                             // We now try to get connected to SSH on the VM
                             withEnv(["INSTANCE_IP=${instanceIP}"]) {
                                 bat """
-                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%instanceIP%
+                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%INSTANCE_IP%
                                 """
                                 echo "SSH is now ready!"
 
