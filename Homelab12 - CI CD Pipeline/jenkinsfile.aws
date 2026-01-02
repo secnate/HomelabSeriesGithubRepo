@@ -17,6 +17,7 @@ pipeline {
         DOCKER_IMAGE_NAME = "${DOCKER_HUB_USERNAME}/${APP_NAME}"
         DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
         CLOUD_PROVIDER = "AWS"
+        CREAT
         PROJECT_DIR = "Homelab12 - CI CD Pipeline"
 
         // We make the Jenkins AWS pipeline see the paths to the  following folders, in addition to whatever system PATH Jenkins already has
@@ -164,23 +165,26 @@ pipeline {
                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
                             sshUserPrivateKey(credentialsId: 'aws-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USERNAME')
                         ]) {
-                            def instanceIP = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
+                            def instanceIP = bat(script: "@terraform output -raw instance_public_ip", returnStdout: true).trim()
 
                             echo "Deploying to ${instanceIP}"
+                            echo "DEBUG - another test --> Deploying to ${instanceIP}"
 
                             // Need to wait for instance to be ready
                             bat "ping -n 31 127.0.0.1 > nul"
 
                             // We now try to get connected to SSH on the VM
-                            bat """
-                                ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%instanceIP%
-                            """
-                            echo "SSH is now ready!"
+                            withEnv(["INSTANCE_IP=${instanceIP}"]) {
+                                bat """
+                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%instanceIP%
+                                """
+                                echo "SSH is now ready!"
 
-                            //  \"sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}\"
+                                //  \"sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}\"
 
-                            echo "Application deployed successfully!"
-                            echo "Access at: http://${instanceIP}:5000"
+                                echo "Application deployed successfully!"
+                                echo "Access at: http://${instanceIP}:5000"
+                            }
                         }
                     }
                 }
