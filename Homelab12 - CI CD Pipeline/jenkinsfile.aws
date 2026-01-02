@@ -173,7 +173,7 @@ pipeline {
 
                             // We now try to get connected to SSH on the VM
                             bat """
-                                ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@${instanceIP}
+                                ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%instanceIP%
                             """
                             echo "SSH is now ready!"
 
