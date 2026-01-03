@@ -199,7 +199,7 @@ pipeline {
                                 icacls "%SSH_KEY_FILE%" /inheritance:r
                             """
 
-                            def instanceIP = bat(script: "@terraform output -raw instance_public_ip", returnStdout: true).trim()
+                            def instanceIP = bat(script: "@terraform output -raw public_ip_address", returnStdout: true).trim()
                             echo "Deploying to ${$vmIP}"
 
                             // Need to wait for instance to be ready
