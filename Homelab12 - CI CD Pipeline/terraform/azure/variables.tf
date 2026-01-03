@@ -43,7 +43,7 @@ variable "source_image_reference" {
 variable "storage_account_name" {
   type        = string
   description = "The name of the storage account to be used for boot diagnostics"
-  default     = "mystorageaccountdiag"
+  default     = "nathanstorageaccountdiag-${random_pet.server.id}"
 }
 
 variable "public_ssh_key_path" {
