@@ -27,7 +27,7 @@ pipeline {
     }
 
     stages {
-
+        /*
         stage ('Checkout') {
             steps {
                 echo "Checking out the code from GitHub"
@@ -164,7 +164,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy Application to Azure VM') { 
             steps {
                 echo "Deploying the infrastructure to Azure VM!"
@@ -218,7 +218,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
     }
 
     // Actions to be performed after the main stages of the pipeline are finished
