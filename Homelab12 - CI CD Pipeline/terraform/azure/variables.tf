@@ -12,7 +12,7 @@ variable "environment_name" {
 
 variable "virtual_machine_size" {
   type        = string
-  default     = "Standard_DS1_v2"
+  default     = "Standard_B1s"
   description = "The size of the VM that is to be deployed"
 }
 
