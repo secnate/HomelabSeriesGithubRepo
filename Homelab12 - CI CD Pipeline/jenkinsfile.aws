@@ -167,16 +167,19 @@ pipeline {
 
                             // Restrict access to the SSH KEY FILE to only the user running the Jenkins agent
                             // This is intended to allow the SSH operation to go through
+                            // 
+                            // This is because Jenkins is running on my Windows computer under the SYSTEM account, 
+                            // so we needed to ensure that only the SYSTEM account can get access to it
+                            //
+                            // That way, the SSH operation can work 
                             bat """
                                 icacls "%SSH_KEY_FILE%" /reset
-                                icacls "%SSH_KEY_FILE%" /grant:r "%USERNAME%:F"
+                                icacls "%SSH_KEY_FILE%" /grant:r "NT AUTHORITY\\SYSTEM:(F)"
                                 icacls "%SSH_KEY_FILE%" /inheritance:r
                             """
 
                             // Now we get the IP to work with
                             def instanceIP = bat(script: "@terraform output -raw instance_public_ip", returnStdout: true).trim()
-
-                            echo "Deploying to ${instanceIP}"
 
                             // This line is to be deleted
                             echo "DEBUG - another test --> Deploying to ${instanceIP}"
@@ -191,6 +194,7 @@ pipeline {
                                 """
                                 echo "SSH is now ready!"
 
+                                // This stuff will go thorugh later
                                 //  \"sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}\"
 
                                 echo "Application deployed successfully!"
