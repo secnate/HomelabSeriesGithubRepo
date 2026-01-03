@@ -148,17 +148,19 @@ pipeline {
             steps {
                 echo "Deploying the infrastructure to Azure!"
                 script {
-                    withCredentials([
-                            usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
-                            string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
-                            string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
-                        ]) {
-                            bat 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
-                            bat 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
-                            bat 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
-                            bat 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
+                    dir("${PROJECT_DIR}/terraform/azure") {
+                        withCredentials([
+                                usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
+                                string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
+                                string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
+                            ]) {
+                                bat 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
+                                bat 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
+                                bat 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
+                                bat 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
 
-                            bat 'terraform apply -auto-approve tfplan'
+                                bat 'terraform apply -auto-approve tfplan'
+                        }
                     }
                 }
             }
