@@ -20,11 +20,14 @@ pipeline {
         DOCKER_IMAGE_TAG = "${BUILD_NUMBER}"
         CLOUD_PROVIDER = "Azure"
         PROJECT_DIR = "Homelab12 - CI CD Pipeline"
+
+        // We make the Jenkins AWS pipeline see the paths to the  following folders, in addition to whatever system PATH Jenkins already has
+        // This environment block at the pipeline level prepends your tool paths and keeps the original ${env.PATH} — safe and scoped only to this pipeline
+        PATH = "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Infracost;C:\\Program Files\\Terraform;C:\\Windows\\System32\\OpenSSH;" + "${env.PATH}"
     }
 
     stages {
 
-        /*
         stage ('Checkout') {
             steps {
                 echo "Checking out the code from GitHub"
@@ -45,9 +48,9 @@ pipeline {
                 script {
                     dir("${PROJECT_DIR}") {
                         // We build the docker container image
-                        sh 'docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .'
+                        bat 'docker build -t %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% .'
                         // And tag the image with the "latest" image
-                        sh 'docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest'
+                        bat 'docker tag %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG% %DOCKER_IMAGE_NAME%:latest'
                     }
                 }
             }
@@ -58,13 +61,15 @@ pipeline {
             steps {
                 echo "Testing the Docker Image Locally"
                 script {
-                    sh '''
-                    docker run -d -p 5001:5000 --name test-flask ${IMAGE_NAME}:${IMAGE_TAG}
-                    timeout /t 10 /nobreak
-                    curl http://localhost:5001 || echo "Warning: Could not reach app"
-                    docker stop test-flask
-                    docker rm test-flask
-                    '''
+                    dir("${PROJECT_DIR}") {
+                        bat '''
+                        docker run -d -p 5001:5000 --name test-flask %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%
+                        ping -n 31 127.0.0.1 > nul
+                        curl http://localhost:5001 || echo "Warning: Could not reach app"
+                        docker stop test-flask
+                        docker rm test-flask
+                        '''
+                    }
                 }
             }
         }
@@ -81,10 +86,11 @@ pipeline {
                     // Such credential binding helps prevent the need for hard-coding them directly 
                     // and prevents exposure in logs or source code
                     // See https://www.jenkins.io/doc/pipeline/steps/credentials-binding/ for more information
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable : 'DOCKER_USER', passwordVariable: 'DOCKER_PASS']) {
-                        sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
-                        sh 'docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}'
-                        sh 'docker push ${DOCKER_IMAGE_NAME}:latest'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable : 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
+
+                        bat 'docker push %DOCKER_IMAGE_NAME%:%DOCKER_IMAGE_TAG%'
+                        bat 'docker push %DOCKER_IMAGE_NAME%:latest'
                     }
                 }
             }
@@ -95,10 +101,13 @@ pipeline {
             steps {
                 echo "Estimating Infrastructure Costs"
                 script {
-                    dir("${PROJECT_DIR}/terraform/aws") {
-                        sh '''
-                        infracost breakdown --path . --format table || echo "Infracost not available, skipping..."
-                        '''
+                    withCredentials([string(credentialsId: 'Infracost-API-Key', variable: 'INFRACOST_API_KEY')]) {
+                        // The 'INFRACOST_API_KEY' environment variable is available ONLY inside this block
+                        dir("${PROJECT_DIR}/terraform/azure") {
+                            bat '''
+                            infracost breakdown --path . --format table || echo "Infracost not available, skipping..."
+                            '''
+                        }
                     }
                 }
             }
@@ -116,19 +125,19 @@ pipeline {
                     // Such credential binding helps prevent the need for hard-coding them directly 
                     // and prevents exposure in logs or source code
                     // See https://www.jenkins.io/doc/pipeline/steps/credentials-binding/ for more information
-                    dir("${PROJECT_DIR}/terraform/aws") {
+                    dir("${PROJECT_DIR}/terraform/azure") {
                         withCredentials([
                             usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
                             string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
                             string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
                         ]) {
-                            sh 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
-                            sh 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
-                            sh 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
-                            sh 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
+                            bat 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
+                            bat 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
+                            bat 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
+                            bat 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
 
-                            sh 'terraform init -reconfigure'
-                            sh 'terraform plan -out=tfplan'
+                            bat 'terraform init -reconfigure'
+                            bat 'terraform plan -out=tfplan'
                         }
                     }
                 }
@@ -137,25 +146,25 @@ pipeline {
 
         stage('Deploy Terraform Infrastructure') { 
             steps {
-                echo "Deploying the infrastructure to AWS!"
+                echo "Deploying the infrastructure to Azure!"
                 script {
                     withCredentials([
                             usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
                             string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
                             string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
                         ]) {
-                            sh 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
-                            sh 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
-                            sh 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
-                            sh 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
+                            bat 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
+                            bat 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
+                            bat 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
+                            bat 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
 
-                            sh 'terraform apply-auto-approve tfplan'
+                            bat 'terraform apply-auto-approve tfplan'
                         }
                     }
                 }
             }
         }
-
+        
         stage('Deploy Application to Azure VM') { 
             steps {
                 echo "Deploying the infrastructure to Azure VM!"
@@ -164,58 +173,68 @@ pipeline {
                         withCredentials([
                             usernamePassword(credentialsId: 'azure-sp', usernameVariable: "ARM_CLIENT_ID",passwordVariable: 'ARM_CLIENT_SECRET'),
                             string(credentialsId: 'azure-tenant-id', variable: "ARM_TENANT_ID"),
-                            string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID')
+                            string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID'),
+                            sshUserPrivateKey(credentialsId: 'azure-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USERNAME')
                         ]) {
-                            sh 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
-                            sh 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
-                            sh 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
-                            sh 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
 
-                            def vmIP = sh(terraform output -raw instance_public_ip, returnStdout: true).trim()
+                            // Set the appropriate environmental variables
+                            bat 'set ARM_CLIENT_ID=${ARM_CLIENT_ID}'
+                            bat 'set ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET}'
+                            bat 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
+                            bat 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
 
+                            // Restrict access to the SSH KEY FILE to only the user running the Jenkins agent
+                            // This is intended to allow the SSH operation to go through
+                            // 
+                            // This is because Jenkins is running on my Windows computer under the SYSTEM account, 
+                            // so we needed to ensure that only the SYSTEM account can get access to it
+                            //
+                            // This is because the Jenkins deployment on Windows is EXCEPTIONALLY finnicky
+                            //
+                            // That way, the SSH operation can work
+                            bat """
+                                icacls "%SSH_KEY_FILE%" /reset
+                                icacls "%SSH_KEY_FILE%" /grant:r "NT AUTHORITY\\SYSTEM:(F)"
+                                icacls "%SSH_KEY_FILE%" /inheritance:r
+                            """
+
+                            def instanceIP = bat(script: "@terraform output -raw instance_public_ip", returnStdout: true).trim()
                             echo "Deploying to ${$vmIP}"
 
                             // Need to wait for instance to be ready
-                            sh 'timeout /t 30 /nobreak'
+                            bat "ping -n 31 127.0.0.1 > nul"
 
-                            // Deploying using SSH Agent plugin --> https://plugins.jenkins.io/ssh-agent/
-                            // The sshagent step in a Jenkinsfile is used to provide SSH credentials to a 
-                            // build process securely. It does this by starting an ssh-agent helper program 
-                            // and loading the specified private key credentials into it, making them available 
-                            // for subsequent SSH or SCP commands within the same block
-                            sshagent(['aws-ssh-key']) {
-                                sh '''
-                                    ssh -o StrictHostKeyChecking=no azureuser@{vmIP} "sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${IMAGE_NAME}:${IMAGE_TAG}"
-                                '''
+                            // We now try to get connected to SSH on the VM
+                            withEnv(["INSTANCE_IP=${instanceIP}"]) {
+                                bat """
+                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%INSTANCE_IP% "echo Waiting for Docker... && until systemctl is-active --quiet docker; do sleep 5; done && sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+                                """
+                                echo "SSH is now ready!"
+
+                                echo "Application deployed successfully!"
+                                echo "Access at: http://${instanceIP}:5000"
                             }
-
-                            echo "Application deployed successfully!"
-                            echo "Access at: http://${vmIP}:5000"
                         }
                     }
                 }
             }
         }
-        */
-
     }
 
-    /*
-    // Actions to be perofmred after the main stages of the pipeline are finished
+    // Actions to be performed after the main stages of the pipeline are finished
     post {
         success {
-            echo -e "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has succesfully completed!"
+            echo "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has succesfully completed!"
         }
         failure {
-            echo -e "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has failed!"
+            echo  "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has failed!"
         }
         always {
             // This will always happen, no matter what the case
             //
             // We force Docker to remove all unused containers, networks, images (both dangling and unused), and optionally, volumes
             // See the following documentation page for further details: https://docs.docker.com/reference/cli/docker/system/prune/
-            sh 'docker system prune -f'
+            bat 'docker system prune -f'
         }
     }
-    */
 }

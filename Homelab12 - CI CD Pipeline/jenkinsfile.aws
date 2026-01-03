@@ -28,7 +28,6 @@ pipeline {
 
         stage ('Checkout') {
             steps {
-                bat '''echo %PATH%'''
 
                 echo "Checking out the code from GitHub"
                 // The checkout step will checkout code from source control; 
@@ -203,7 +202,7 @@ pipeline {
         }
     }
 
-    // Actions to be perofmred after the main stages of the pipeline are finished
+    // Actions to be performed after the main stages of the pipeline are finished
     post {
         success {
             echo "The pipeline for deploying ${APP_NAME} into ${CLOUD_PROVIDER} infrastructure has succesfully completed!"
