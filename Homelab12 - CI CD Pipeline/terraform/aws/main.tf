@@ -86,7 +86,7 @@ resource "aws_security_group" "flask_sg" {
   }
 }
 
-resource "aws_instance" "flask_app" {
+resource "azurerm_virtual_machine " "flask_app" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.public_subnet.id

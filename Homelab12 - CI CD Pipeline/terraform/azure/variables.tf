@@ -40,14 +40,14 @@ variable "source_image_reference" {
   }
 }
 
-variable "ssh_key_public_path" {
-  type        = string
-  description = "The file path to the public SSH key to be used for VM authentication"
-  default     = "..\\..\\keys\\azure-key.pub"
-}
-
 variable "storage_account_name" {
   type        = string
   description = "The name of the storage account to be used for boot diagnostics"
   default     = "mystorageaccountdiag"
+}
+
+variable "key_name" {
+    description = "SSH key pair name"
+    type = string
+    default = "azure-ssh-key"
 }
