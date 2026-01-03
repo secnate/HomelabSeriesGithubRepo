@@ -200,7 +200,7 @@ pipeline {
                             """
 
                             def instanceIP = bat(script: "@terraform output -raw public_ip_address", returnStdout: true).trim()
-                            echo "Deploying to ${$vmIP}"
+                            echo "Deploying to ${$instanceIP}"
 
                             // Need to wait for instance to be ready
                             bat "ping -n 31 127.0.0.1 > nul"
