@@ -4,7 +4,8 @@ resource "azurerm_resource_group" "rg" {
 }
 
 resource "random_pet" "server" {
-  length = 2
+  // We have only one randomly generated "pet" word
+  length = 1
 }
 
 # Create virtual network
