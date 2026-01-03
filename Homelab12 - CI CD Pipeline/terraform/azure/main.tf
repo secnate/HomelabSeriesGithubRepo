@@ -3,6 +3,10 @@ resource "azurerm_resource_group" "rg" {
   name     = "myResourceGroup-${var.environment_name}"
 }
 
+resource "random_pet" "server" {
+  length = 8
+}
+
 # Create virtual network
 resource "azurerm_virtual_network" "my_terraform_network" {
   name                = "myVnet"
