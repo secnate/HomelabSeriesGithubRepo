@@ -105,29 +105,12 @@ resource "aws_instance" "flask_app" {
   # Yum is the package manager on Red Hat Enterprise Linux -- and it is so Yummy!
   user_data = <<-EOF
               #!/bin/bash
-              set -euxo pipefail
-
-              # Update system
               yum update -y
-
-              # Install yum-utils (for yum-config-manager)
-              yum install -y yum-utils
-
-              # Add Docker CE repository (CentOS-compatible for RHEL)
-              yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-
-              # Install Docker
-              yum install -y docker-ce docker-ce-cli containerd.io
-
-              # Enable and start Docker
-              systemctl daemon-reexec
-              systemctl enable docker
+              yum install -y docker
               systemctl start docker
-
-              # Add ec2-user to docker group
+              systemctl enable docker
               usermod -aG docker ec2-user
-
-              echo "Docker installation complete on RHEL EC2 instance"
+              echo "Finished configuring the newly provisioned EC2 instance"
               EOF
 
   tags = {
