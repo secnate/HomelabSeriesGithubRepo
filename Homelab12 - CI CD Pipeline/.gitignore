@@ -16,8 +16,10 @@ pyenv
 .terraform.lock.hcl
 .terraform/
 
-# Keys and secrets (CRITICAL!)
-keys/
+# Keys and secrets (the configuration of this portion is CRITICAL!)
+# We only want the PUBLIC keys to be uploaded
+keys/aws-key
+keys/azure-key
 
 # Other folders
 venv/

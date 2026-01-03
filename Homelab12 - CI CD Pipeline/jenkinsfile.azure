@@ -118,7 +118,7 @@ pipeline {
                 script {
                     dir("${PROJECT_DIR}/terraform/azure") {
                         bat "echo Current directory:"
-                        bat "cd"
+                        bat "dir"
                         bat "echo Checking for SSH key:"
                         bat "if exist ..\\..\\keys\\azure-key.pub (echo File exists) else (echo File NOT found)"
                     }
