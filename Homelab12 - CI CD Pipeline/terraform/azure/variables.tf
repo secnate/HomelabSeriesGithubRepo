@@ -49,5 +49,5 @@ variable "storage_account_name" {
 variable "public_ssh_key_path" {
     description = "Public SSH key path"
     type = string
-    default = "../../azure-key.pub"
+    default = "../../keys/azure-key.pub"
 }
