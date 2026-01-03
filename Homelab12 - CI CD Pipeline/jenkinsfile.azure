@@ -113,19 +113,6 @@ pipeline {
             }
         }
 
-        stage('Debug Paths') {
-            steps {
-                script {
-                    dir("${PROJECT_DIR}/terraform/azure") {
-                        bat "echo Current directory:"
-                        bat "dir"
-                        bat "echo Checking for SSH key:"
-                        bat "if exist ..\\..\\keys\\azure-key.pub (echo File exists) else (echo File NOT found)"
-                    }
-                }
-            }
-        }
-
         stage("Terraform Init & Plan") {
             steps {
                 echo "Initializing and planning Terraform"
@@ -157,8 +144,6 @@ pipeline {
             }
         }
 
-        /*
-        // AFTERWARDS, REMOVE THE DEBUG STAGE
         stage('Deploy Terraform Infrastructure') { 
             steps {
                 echo "Deploying the infrastructure to Azure!"
@@ -174,7 +159,6 @@ pipeline {
                             bat 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
 
                             bat 'terraform apply-auto-approve tfplan'
-                        }
                     }
                 }
             }
@@ -233,7 +217,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
     }
 
     // Actions to be performed after the main stages of the pipeline are finished
