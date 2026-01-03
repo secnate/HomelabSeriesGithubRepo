@@ -113,6 +113,19 @@ pipeline {
             }
         }
 
+        stage('Debug Paths') {
+            steps {
+                script {
+                    dir("${PROJECT_DIR}/terraform/azure") {
+                        bat "echo Current directory:"
+                        bat "cd"
+                        bat "echo Checking for SSH key:"
+                        bat "if exist ..\\..\\keys\\azure-key.pub (echo File exists) else (echo File NOT found)"
+                    }
+                }
+            }
+        }
+
         stage("Terraform Init & Plan") {
             steps {
                 echo "Initializing and planning Terraform"
@@ -145,6 +158,7 @@ pipeline {
         }
 
         /*
+        // AFTERWARDS, REMOVE THE DEBUG STAGE
         stage('Deploy Terraform Infrastructure') { 
             steps {
                 echo "Deploying the infrastructure to Azure!"

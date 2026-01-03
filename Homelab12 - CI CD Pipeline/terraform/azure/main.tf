@@ -113,7 +113,7 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
 
   admin_ssh_key {
     username   = var.username
-    public_key = file(var.ssh_key_path)
+    public_key = file(var.public_ssh_key_path)
   }
 
   boot_diagnostics {

@@ -46,8 +46,8 @@ variable "storage_account_name" {
   default     = "mystorageaccountdiag"
 }
 
-variable "ssh_key_path" {
-    description = "SSH key pair name"
+variable "public_ssh_key_path" {
+    description = "Public SSH key path"
     type = string
-    default = "..\\..\\keys\\azure-key"
+    default = "../../azure-key.pub"
 }
