@@ -27,7 +27,7 @@ pipeline {
     }
 
     stages {
-        /*
+
         stage ('Checkout') {
             steps {
                 echo "Checking out the code from GitHub"
@@ -39,7 +39,7 @@ pipeline {
                 checkout scm
             }
         }
-
+        
         stage ("Build Docker Image") {
             
             steps {
@@ -144,6 +144,7 @@ pipeline {
             }
         }
 
+        /*
         stage('Deploy Terraform Infrastructure') { 
             steps {
                 echo "Deploying the infrastructure to Azure!"
