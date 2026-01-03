@@ -102,10 +102,11 @@ resource "aws_instance" "flask_app" {
   ]
 
   # Here we update the newly provisioned EC2 instance, download docker and get it running
+  # Yum is the package manager on Red Hat Enterprise Linux -- and it is so Yummy!
   user_data = <<-EOF
               #!/bin/bash
-              apt update -y
-              apt-get install -y docker.io
+              yum update -y
+              yum install -y docker
               systemctl start docker
               systemctl enable docker
               usermod -aG docker ec2-user
