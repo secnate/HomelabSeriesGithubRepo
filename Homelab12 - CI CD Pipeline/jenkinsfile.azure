@@ -158,7 +158,7 @@ pipeline {
                             bat 'set ARM_TENANT_ID=${ARM_TENANT_ID}'
                             bat 'set ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}'
 
-                            bat 'terraform apply-auto-approve tfplan'
+                            bat 'terraform apply -auto-approve tfplan'
                     }
                 }
             }
