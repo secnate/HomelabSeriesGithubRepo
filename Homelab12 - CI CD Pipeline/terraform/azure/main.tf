@@ -125,4 +125,32 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.my_storage_account.primary_blob_endpoint
   }
+
+  # Configuring the VM for initial execution
+  custom_data = base64encode(<<-EOF
+    #!/bin/bash
+
+    # Wait for apt locks to be released
+    echo "Waiting for apt locks to be released..."
+    while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do
+        echo "Waiting for other apt processes to finish..."
+        sleep 5
+    done
+
+    # Extra safety: Sometimes processes release the lock but are still finishing up
+    sleep 10
+
+    # Now it's safe to use apt - we have the lock released!
+    echo "Updating package list..."
+    apt-get update -y || { echo "apt-get update failed"; exit 1; }
+
+    # We install docker
+    apt-get install -y docker.io
+    systemctl start docker
+    systemctl enable docker
+    usermod -aG docker azureadmin
+
+    echo "Finished configuring the newly provisioned Azure VM"
+    EOF
+  )
 }

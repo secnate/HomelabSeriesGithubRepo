@@ -208,14 +208,14 @@ pipeline {
                             // We now try to get connected to SSH on the VM
                             withEnv(["INSTANCE_IP=${instanceIP}"]) {
                                 bat """
-                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%INSTANCE_IP%
+                                    ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_FILE%" %SSH_USERNAME%@%INSTANCE_IP% "echo Going to Finish Testing This Stuff"
                                 """
                                 
                                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                 // The following is a line from testing
                                 // "echo Waiting for Docker... && until systemctl is-active --quiet docker; do sleep 5; done && sudo docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} && sudo docker stop ${APP_NAME} || true && sudo docker rm ${APP_NAME} || true && sudo docker run -d -p 5000:5000 -e CLOUD_PROVIDER=${CLOUD_PROVIDER} --name ${APP_NAME} ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
                                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                
+
                                 echo "SSH is now ready!"
 
                                 echo "Application deployed successfully!"
