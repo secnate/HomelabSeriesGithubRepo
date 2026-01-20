@@ -35,3 +35,6 @@ scripts/
 # OS
 .DS_Store
 Thumbs.db
+
+# Infracost Repository, don't want nor need
+.infracost/
