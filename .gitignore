@@ -5,3 +5,5 @@
 *.tfplan
 *.tfvars
 .terraform.lock.hcl
+
+.infracost
