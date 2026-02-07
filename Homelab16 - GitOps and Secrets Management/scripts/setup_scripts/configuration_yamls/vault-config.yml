@@ -1,0 +1,15 @@
+# YAML For Configuring the HashiCorp Vault Instance
+# https://github.com/hashicorp/vault-helm/blob/main/values.yaml
+server:
+  dev:
+    enabled: true
+    devRootToken: "root"
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 256Mi
+
+ui:
+  enabled: true
