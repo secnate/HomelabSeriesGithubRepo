@@ -4,6 +4,27 @@ server:
   dev:
     enabled: true
     devRootToken: "root"
+  
+  # Explicitly configure the service
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 8200
+    targetPort: 8200
+  
+  # Configure the listener (Vault config)
+  standalone:
+    config: |
+      ui = true
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+      storage "file" {
+        path = "/vault/data"
+      }
+  
   resources:
     requests:
       memory: 256Mi
