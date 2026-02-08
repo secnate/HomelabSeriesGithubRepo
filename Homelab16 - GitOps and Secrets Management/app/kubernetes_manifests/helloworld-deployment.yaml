@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-app-deployment
+spec:
+  selector:
+    matchLabels:
+      app: helloworld-app
+  replicas: 3 # Number of parallel pods running the app
+  template:
+    metadata:
+      labels:
+        app: helloworld-app
+    spec:
+      containers:
+      - name: helloworld-app
+        image: nathanpavl/sample_hello_world_flask_app:latest # My container image
+        ports:
+        - containerPort: 80 # The port the Hello World app runs in the container
