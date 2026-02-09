@@ -170,6 +170,92 @@ echo "→ Removing unused dependencies (if safe)..."
 sudo apt autoremove -y
 
 # ──────────────────────────────────────────────────────────────────────────────
+# 10. Clean up Kubernetes resources created by make init
+# ──────────────────────────────────────────────────────────────────────────────
+
+echo
+echo "→ Cleaning up Kubernetes resources created by 'make init'..."
+
+APP_NAMESPACE="app"
+DEPLOYMENT_NAME="hello-world-app-deployment"
+SERVICE_NAME="helloworld-app"
+
+# Stop any background kubectl port-forward processes for this app
+echo "→ Terminating any kubectl port-forward processes..."
+pkill -f "kubectl port-forward.*svc/${SERVICE_NAME}.*5000:80" 2>/dev/null || true
+
+if pgrep -f "kubectl port-forward.*${SERVICE_NAME}" >/dev/null; then
+  echo "  Warning: Some port-forward processes may still be running:"
+  pgrep -fl "kubectl port-forward"
+  echo "  You can kill them manually with: pkill -f 'kubectl port-forward.*${SERVICE_NAME}'"
+else
+  echo "  No port-forward processes found."
+fi
+
+# Delete Service
+echo "→ Deleting Service '${SERVICE_NAME}' in namespace '${APP_NAMESPACE}'..."
+kubectl delete service "${SERVICE_NAME}" \
+  -n "${APP_NAMESPACE}" \
+  --ignore-not-found=true \
+  --grace-period=0 2>/dev/null || true
+
+# Delete Deployment (cascades to ReplicaSets & Pods)
+echo "→ Deleting Deployment '${DEPLOYMENT_NAME}' in namespace '${APP_NAMESPACE}'..."
+kubectl delete deployment "${DEPLOYMENT_NAME}" \
+  -n "${APP_NAMESPACE}" \
+  --ignore-not-found=true \
+  --grace-period=0 \
+  --cascade=foreground 2>/dev/null || true
+
+# Wait briefly for cascading deletion
+sleep 5
+
+# Wait until pods are gone
+echo "→ Waiting for pods to terminate (up to 60s)..."
+kubectl wait --for=delete pod -l app=helloworld-app \
+  -n "${APP_NAMESPACE}" \
+  --timeout=60s 2>/dev/null || true
+
+# Show remaining pods (should be none)
+echo "  Remaining pods in namespace '${APP_NAMESPACE}':"
+kubectl get pods -n "${APP_NAMESPACE}" -l app=helloworld-app 2>/dev/null || echo "  No pods found."
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 11. Force-delete the namespace (even if hidden/system resources remain, e.g. 
+#           Events, EndpointSlices, lingering ConfigMaps/Secrets, or stuck finalizers)
+# ──────────────────────────────────────────────────────────────────────────────
+echo "→ Deleting namespace '${APP_NAMESPACE}' (force mode)..."
+
+# First try normal delete
+kubectl delete namespace "${APP_NAMESPACE}" --ignore-not-found=true || true
+
+# If still present, remove finalizers and force delete
+if kubectl get namespace "${APP_NAMESPACE}" >/dev/null 2>&1; then
+  echo "  Namespace still exists → removing finalizers and forcing deletion..."
+
+  # Remove finalizers (common reason namespaces get stuck)
+  kubectl patch namespace "${APP_NAMESPACE}" \
+    -p '{"spec":{"finalizers":null}}' \
+    --type=merge 2>/dev/null || true
+
+  # Force delete
+  kubectl delete namespace "${APP_NAMESPACE}" \
+    --force --grace-period=0 || true
+
+  # Quick wait & check
+  sleep 3
+  if kubectl get namespace "${APP_NAMESPACE}" >/dev/null 2>&1; then
+    echo "  Warning: Namespace '${APP_NAMESPACE}' still present after force delete."
+    echo "  Check manually: kubectl describe ns ${APP_NAMESPACE}"
+    echo "  Or run: kubectl delete ns ${APP_NAMESPACE} --force --grace-period=0"
+  else
+    echo "  Namespace '${APP_NAMESPACE}' successfully deleted."
+  fi
+else
+  echo "  Namespace '${APP_NAMESPACE}' already gone."
+fi
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Final notes
 # ──────────────────────────────────────────────────────────────────────────────
 echo
@@ -181,13 +267,3 @@ echo "  - Run 'sudo apt autoremove' again if needed for any leftovers."
 echo "  - Double-check repo deletion on https://hub.docker.com/r/${DOCKER_HUB_USERNAME}/${IMAGE_NAME}"
 echo "    (refresh after a few minutes — Docker Hub may have delayed cleanup)"
 echo "===================================================================="
-
-
-
-#####################################################################################
-#####################################################################################
-#
-# DO THE KUBERNETES APPLICATION REMOVAL
-#
-#####################################################################################
-#####################################################################################

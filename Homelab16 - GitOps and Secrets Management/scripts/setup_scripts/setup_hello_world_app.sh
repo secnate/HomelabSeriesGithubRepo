@@ -78,7 +78,7 @@ IMAGE_NAME="sample_hello_world_flask_app"
 TAG="v1.0.0"
 APPLICATION_PATH="app"
 
-FULL_IMAGE_NAME="${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${TAG}"
+FULL_IMAGE_NAME="${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:latest"
 
 echo
 echo "Building & pushing Docker image: ${FULL_IMAGE_NAME}"
