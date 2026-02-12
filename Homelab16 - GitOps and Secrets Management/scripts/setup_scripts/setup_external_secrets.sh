@@ -244,17 +244,3 @@ echo -e "${GREEN}===============================================================
 echo " External Secrets Operator setup complete!"
 echo "===================================================================="
 echo -e "${NC}"
-echo
-echo -e "${YELLOW}Useful commands:${NC}"
-echo -e "  ${BLUE}# View synced secret values (decoded):${NC}"
-echo -e "  kubectl get secret hello-world-secrets -n default -o json | jq -r '.data | to_entries[] | \"\\(.key): \\(.value | @base64d)\"'"
-echo
-echo -e "  ${BLUE}# Check SecretStore status:${NC}"
-echo -e "  kubectl describe secretstore vault-backend -n default"
-echo
-echo -e "  ${BLUE}# Check ExternalSecret status:${NC}"
-echo -e "  kubectl describe externalsecret hello-world-secrets -n default"
-echo
-echo -e "  ${BLUE}# View ESO logs:${NC}"
-echo -e "  kubectl logs -n external-secrets -l app.kubernetes.io/name=external-secrets --tail=50"
-echo

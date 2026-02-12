@@ -60,9 +60,13 @@ if kubectl get namespace vault >/dev/null 2>&1; then
   echo -e "${YELLOW}→ Vault namespace found. Cleaning up Vault-side configurations...${NC}"
   
   if kubectl get pod vault-0 -n vault >/dev/null 2>&1; then
-    # Delete the Vault role
-    echo -e "${BLUE}  → Deleting Vault Kubernetes auth role 'demo-role'...${NC}"
-    kubectl exec vault-0 -n vault -- vault delete auth/kubernetes/role/demo-role 2>/dev/null || true
+    # Delete the Vault role (match the name created in setup)
+    echo -e "${BLUE}  → Deleting Vault Kubernetes auth role 'external-secrets'...${NC}"
+    kubectl exec vault-0 -n vault -- vault delete auth/kubernetes/role/external-secrets 2>/dev/null || true
+    
+    # Delete any leftover RBAC bindings we may have added
+    echo -e "${BLUE}  → Deleting ESO-related ClusterRoleBindings...${NC}"
+    kubectl delete clusterrolebinding eso-auth-delegator eso-token-review external-secrets-token-review 2>/dev/null || true
     
     # Delete the Vault policy
     echo -e "${BLUE}  → Deleting Vault policy 'demo-policy'...${NC}"
