@@ -36,6 +36,33 @@ echo -e "${YELLOW}→ Port-forward started in background (PID ${PF_PID}).${NC}"
 echo -e "   Vault UI should now be available at: ${BLUE}http://localhost:8200${NC}"
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Install Vault CLI locally (required for vault policy/auth/kv commands)
+# ──────────────────────────────────────────────────────────────────────────────
+
+echo -e "${GREEN}→ Installing HashiCorp Vault CLI locally...${NC}"
+
+# Add official HashiCorp APT repository (idempotent)
+if [ ! -f /etc/apt/sources.list.d/hashicorp.list ]; then
+  curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list >/dev/null
+fi
+
+sudo apt update -y >/dev/null
+
+# Install Vault (latest version, or pin if needed)
+sudo apt install -y vault
+
+# Verify
+if ! command -v vault >/dev/null 2>&1; then
+  echo -e "${RED}Error: Vault CLI installation failed.${NC}"
+  echo "Check logs or install manually: https://developer.hashicorp.com/vault/install"
+  exit 1
+fi
+
+echo -e "${GREEN}→ Vault CLI installed: $(vault --version)${NC}"
+echo
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Interactive prompt for the user to add secrets manually into the vault
 # ──────────────────────────────────────────────────────────────────────────────
 

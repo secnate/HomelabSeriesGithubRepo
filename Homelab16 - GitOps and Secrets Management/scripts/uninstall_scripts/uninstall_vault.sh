@@ -13,3 +13,29 @@ helm uninstall vault -n vault
 kubectl delete namespace vault --timeout=60s
 # And remove it from the repository
 helm repo remove hashicorp
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Uninstall Vault CLI (local binary only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+echo "→ Uninstalling Vault CLI (local binary)..."
+
+if command -v vault >/dev/null 2>&1; then
+  sudo apt purge -y vault >/dev/null 2>&1 || true
+  sudo apt autoremove -y >/dev/null 2>&1 || true
+  
+  # Remove repo file if no other HashiCorp tools are used
+  sudo rm -f /etc/apt/sources.list.d/hashicorp.list >/dev/null 2>&1 || true
+  sudo rm -f /usr/share/keyrings/hashicorp-archive-keyring.gpg >/dev/null 2>&1 || true
+  sudo apt update -y >/dev/null 2>&1 || true
+  
+  if command -v vault >/dev/null 2>&1; then
+    echo "  Warning: Vault CLI still present — manual removal may be needed."
+  else
+    echo "  Vault CLI successfully removed."
+  fi
+else
+  echo "  Vault CLI was not installed locally — skipping."
+fi
+
+echo
