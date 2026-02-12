@@ -187,7 +187,7 @@ EOF
 echo -e "${YELLOW}→ Creating Vault role 'demo-role'..${NC}"
 kubectl exec vault-0 -n vault -- vault write auth/kubernetes/role/external-secrets \
   bound_service_account_names=default \
-  bound_service_account_namespaces=app \
+  bound_service_account_namespaces=external-secrets \
   policies=demo-policy \
   ttl=24h
 
