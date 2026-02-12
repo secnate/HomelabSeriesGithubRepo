@@ -95,6 +95,42 @@ kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=external-secret
 echo -e "${GREEN}→ External Secrets Operator is ready!${NC}"
 
 # ══════════════════════════════════════════════════════════════════════════════
+# WAIT FOR WEBHOOK SERVICE ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════════════
+# External Secrets Operator uses a validating webhook to validate SecretStore
+# and ExternalSecret resources before they're created. The webhook service needs
+# to have endpoints registered before we can apply these resources, otherwise
+# kubectl will fail with "no endpoints available" errors.
+#
+# Even though the webhook pod is running, it takes a few seconds for:
+# 1. The pod to become ready
+# 2. The Service endpoints to be registered
+# 3. The API server to recognize the webhook is available
+#
+# This wait loop ensures the webhook is fully operational before proceeding.
+# ══════════════════════════════════════════════════════════════════════════════
+
+echo -e "${GREEN}→ External Secrets Operator is ready!${NC}"
+echo -e "${YELLOW}→ Waiting for webhook service endpoints to be ready...${NC}"
+
+for i in {1..30}; do
+  if kubectl get endpoints external-secrets-webhook -n external-secrets -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null | grep -q .; then
+    echo -e "${GREEN}→ Webhook endpoints are ready!${NC}"
+    break
+  fi
+  if [ $i -eq 30 ]; then
+    echo -e "${RED}Error: Webhook endpoints not ready after 30 seconds${NC}"
+    echo -e "${RED}Check: kubectl get endpoints external-secrets-webhook -n external-secrets${NC}"
+    exit 1
+  fi
+  sleep 1
+done
+
+# Additional safety wait for API server to fully register the webhook
+sleep 5
+echo
+
+# ══════════════════════════════════════════════════════════════════════════════
 # VAULT KUBERNETES AUTHENTICATION SETUP
 # ══════════════════════════════════════════════════════════════════════════════
 # We need to configure Vault to trust and authenticate Kubernetes service accounts.
@@ -149,7 +185,7 @@ EOF
 # ══════════════════════════════════════════════════════════════════════════════
 
 echo -e "${YELLOW}→ Creating Vault role 'demo-role'..${NC}"
-kubectl exec vault-0 -n vault -- vault write auth/kubernetes/role/demo-role \
+kubectl exec vault-0 -n vault -- vault write auth/kubernetes/role/external-secrets \
   bound_service_account_names=external-secrets \
   bound_service_account_namespaces=external-secrets \
   policies=demo-policy \
