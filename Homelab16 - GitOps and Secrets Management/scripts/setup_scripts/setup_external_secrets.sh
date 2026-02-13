@@ -185,9 +185,9 @@ EOF
 # ══════════════════════════════════════════════════════════════════════════════
 
 echo -e "${YELLOW}→ Creating Vault role 'demo-role'..${NC}"
-kubectl exec vault-0 -n vault -- vault write auth/kubernetes/role/external-secrets \
+kubectl exec vault-0 -n vault -- vault write auth/kubernetes/role/demo-role \
   bound_service_account_names=default \
-  bound_service_account_namespaces=external-secrets \
+  bound_service_account_namespaces=app \
   policies=demo-policy \
   ttl=24h
 
@@ -233,7 +233,8 @@ echo -e "${BLUE}  Kubernetes Secret:${NC}"
 if kubectl get secret hello-world-secrets -n app >/dev/null 2>&1; then
   echo -e "${GREEN}    ✓ Secret 'hello-world-secrets' exists!${NC}"
   echo -e "${BLUE}    Secret contains these keys:${NC}"
-  kubectl get secret hello-world-secrets -n app -o jsonpath='{.data}' | jq -r 'keys[]' | sed 's/^/      - /'
+  kubectl get secret hello-world-secrets -n app -o jsonpath='{.data}' | \
+    grep -o '"[^"]*":' | tr -d '":' | sed 's/^/      - /'
 else
   echo -e "${RED}    ✗ Secret 'hello-world-secrets' not found!${NC}"
   echo -e "${RED}    Check ExternalSecret status: kubectl describe externalsecret hello-world-secrets -n app${NC}"

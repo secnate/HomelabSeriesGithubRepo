@@ -61,8 +61,8 @@ if kubectl get namespace vault >/dev/null 2>&1; then
   
   if kubectl get pod vault-0 -n vault >/dev/null 2>&1; then
     # Delete the Vault role (match the name created in setup)
-    echo -e "${BLUE}  → Deleting Vault Kubernetes auth role 'external-secrets'...${NC}"
-    kubectl exec vault-0 -n vault -- vault delete auth/kubernetes/role/external-secrets 2>/dev/null || true
+    echo -e "${BLUE}  → Deleting Vault Kubernetes auth role 'demo-role'...${NC}"
+    kubectl exec vault-0 -n vault -- vault delete auth/kubernetes/role/demo-role 2>/dev/null || true
     
     # Delete any leftover RBAC bindings we may have added
     echo -e "${BLUE}  → Deleting ESO-related ClusterRoleBindings...${NC}"
@@ -84,45 +84,6 @@ else
   echo -e "${YELLOW}→ Vault namespace not found. Vault configs already cleaned up.${NC}"
 fi
 
-echo
-
-# ══════════════════════════════════════════════════════════════════════════════
-# DELETE ANY REMAINING EXTERNAL SECRET RESOURCES (OTHER NAMESPACES)
-# ══════════════════════════════════════════════════════════════════════════════
-# Clean up any ExternalSecrets or SecretStores in other namespaces
-# This is a safety measure in case resources were created elsewhere
-# ══════════════════════════════════════════════════════════════════════════════
-
-echo -e "${YELLOW}→ Checking for External Secret resources in other namespaces...${NC}"
-
-# Delete ExternalSecrets in all namespaces
-EXTERNAL_SECRETS_COUNT=$(kubectl get externalsecrets --all-namespaces 2>/dev/null | grep -v NAMESPACE | wc -l || echo "0")
-if [ "$EXTERNAL_SECRETS_COUNT" -gt 0 ]; then
-  echo -e "${BLUE}  → Found $EXTERNAL_SECRETS_COUNT ExternalSecret(s). Deleting...${NC}"
-  kubectl delete externalsecrets --all --all-namespaces --timeout=30s 2>/dev/null || true
-else
-  echo -e "${BLUE}  → No ExternalSecrets found in other namespaces.${NC}"
-fi
-
-# Delete SecretStores in all namespaces
-SECRET_STORES_COUNT=$(kubectl get secretstores --all-namespaces 2>/dev/null | grep -v NAMESPACE | wc -l || echo "0")
-if [ "$SECRET_STORES_COUNT" -gt 0 ]; then
-  echo -e "${BLUE}  → Found $SECRET_STORES_COUNT SecretStore(s). Deleting...${NC}"
-  kubectl delete secretstores --all --all-namespaces --timeout=30s 2>/dev/null || true
-else
-  echo -e "${BLUE}  → No SecretStores found in other namespaces.${NC}"
-fi
-
-# Delete ClusterSecretStores (cluster-wide)
-CLUSTER_SECRET_STORES_COUNT=$(kubectl get clustersecretstores 2>/dev/null | grep -v NAME | wc -l || echo "0")
-if [ "$CLUSTER_SECRET_STORES_COUNT" -gt 0 ]; then
-  echo -e "${BLUE}  → Found $CLUSTER_SECRET_STORES_COUNT ClusterSecretStore(s). Deleting...${NC}"
-  kubectl delete clustersecretstores --all --timeout=30s 2>/dev/null || true
-else
-  echo -e "${BLUE}  → No ClusterSecretStores found.${NC}"
-fi
-
-echo -e "${GREEN}  → All External Secret resources cleaned up.${NC}"
 echo
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -232,7 +193,4 @@ echo -e "  ${BLUE}✓${NC} External Secrets Operator Helm release"
 echo -e "  ${BLUE}✓${NC} Namespace 'external-secrets'"
 echo -e "  ${BLUE}✓${NC} Namespace 'app'"
 echo -e "  ${BLUE}✓${NC} Helm repository 'external-secrets'"
-echo
-echo -e "${YELLOW}Note:${NC} CRDs may still exist if you chose not to delete them."
-echo -e "      To remove CRDs later: ${BLUE}kubectl delete crds -l app.kubernetes.io/name=external-secrets${NC}"
 echo
