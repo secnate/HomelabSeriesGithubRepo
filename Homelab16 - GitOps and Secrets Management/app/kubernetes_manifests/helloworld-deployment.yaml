@@ -13,8 +13,42 @@ spec:
       labels:
         app: helloworld-app
     spec:
+      # Ensure the container will **always** be restarted whenever they exit,
+      # regardless of the exit code (success or failure). This is crucial for
+      # maintaining high availability of a given application
+      restartPolicy: Always
       containers:
       - name: helloworld-app
         image: nathanpavl/sample_hello_world_flask_app:latest # My container image
         ports:
         - containerPort: 80 # The port the Hello World app runs in the container
+        env:
+          - name: API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: hello-world-secrets
+                key: API_KEY
+          
+          - name: DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: hello-world-secrets
+                key: DATABASE_PASSWORD
+
+          - name: STRIPE_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: hello-world-secrets
+                key: STRIPE_SECRET_KEY
+
+          - name: APP_ENV
+            valueFrom:
+              secretKeyRef:
+                name: hello-world-secrets
+                key: APP_ENV
+
+          - name: FEATURE_FLAG_BETA
+            valueFrom:
+              secretKeyRef:
+                name: hello-world-secrets
+                key: FEATURE_FLAG_BETA

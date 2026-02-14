@@ -68,6 +68,8 @@ helm install external-secrets external-secrets/external-secrets \
   --create-namespace \
   --set installCRDs=true
 
+# A CRD (Custom Resource Definition) is simply a way to teach Kubernetes about new,
+# custom types of objects that aren't built-in (like Pods, Services, or Deployments)
 # Wait for CRDs to be fully established and registered with API server
 echo -e "${YELLOW}→ Waiting for External Secrets CRDs to be registered...${NC}"
 
@@ -161,6 +163,10 @@ kubectl exec vault-0 -n vault -- vault write auth/kubernetes/config \
 # NOTE: This MUST be created BEFORE the role that references it!
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Vault policy creation: allows ESO to read secrets under secret/apps/hello-world/*
+# This pattern (heredoc + kubectl exec) is a standard way to pipe multi-line content
+# into Vault CLI from inside a pod. See Vault docs: https://developer.hashicorp.com/vault/docs/auth/kubernetes
+# and community examples for why -it or cat | -i is used to avoid stdin issues.
 echo -e "${YELLOW}→ Creating Vault policy 'demo-policy'...${NC}"
 kubectl exec -it vault-0 -n vault -- vault policy write demo-policy - <<EOF
 path "secret/data/apps/hello-world/*" {
@@ -225,7 +231,7 @@ kubectl get secretstore vault-backend -n app 2>/dev/null || \
 
 # Check ExternalSecret status
 echo -e "${BLUE}  ExternalSecret status:${NC}"
-kubectl get externalsecret hello-world-secrets -n app 2>/dev/null || \
+kubectl get externalsecret hello-world-external-secret -n app 2>/dev/null || \
   echo -e "${RED}    ✗ ExternalSecret not found${NC}"
 
 # Check if Kubernetes Secret was created
@@ -237,7 +243,7 @@ if kubectl get secret hello-world-secrets -n app >/dev/null 2>&1; then
     grep -o '"[^"]*":' | tr -d '":' | sed 's/^/      - /'
 else
   echo -e "${RED}    ✗ Secret 'hello-world-secrets' not found!${NC}"
-  echo -e "${RED}    Check ExternalSecret status: kubectl describe externalsecret hello-world-secrets -n app${NC}"
+  echo -e "${RED}    Check ExternalSecret status: kubectl describe externalsecret hello-world-external-secret -n app${NC}"
 fi
 
 echo
