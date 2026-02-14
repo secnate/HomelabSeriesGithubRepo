@@ -5,8 +5,19 @@
 </head>
 <body>
     <div class="container">
-        <h1> External Secrets & GitOps Demo</h1>
+        <h1>External Secrets & GitOps Demo</h1>
         <p>Hello World!</p>
+
+        <h2><strong>Application Version:</strong> {{ version or 'Not Set' }}</h2>
+        
+        <h2>Injected Secrets:</h2>
+        <ul>
+            <li><strong>FEATURE_FLAG_BETA:</strong> {{ FEATURE_FLAG_BETA or 'Not Set' }}</li>
+            <li><strong>API_KEY:</strong> {{ API_KEY or 'Not Set' }}</li>
+            <li><strong>DATABASE_PASSWORD:</strong> {{ DATABASE_PASSWORD or 'Not Set' }}</li>
+            <li><strong>STRIPE_SECRET_KEY:</strong> {{ STRIPE_SECRET_KEY or 'Not Set' }}</li>
+            <li><strong>APP_ENV:</strong> {{ APP_ENV or 'Not Set' }}</li>
+        </ul>
     </div>
 </body>
 </html>
