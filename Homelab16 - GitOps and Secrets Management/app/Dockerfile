@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.14-slim
 
 # Set the working directory inside the container to be the "/app"
 WORKDIR /app
