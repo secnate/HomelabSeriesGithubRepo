@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +8,7 @@ spec:
   selector:
     matchLabels:
       app: helloworld-app
-  replicas: 3 # Number of parallel pods running the app
+  replicas: 3  # Number of parallel pods running the app
   template:
     metadata:
       labels:
@@ -19,34 +20,31 @@ spec:
       restartPolicy: Always
       containers:
       - name: helloworld-app
-        image: nathanpavl/sample_hello_world_flask_app:latest # My container image
+        # My container image
+        image: nathanpavl/sample_hello_world_flask_app:latest
         ports:
-        - containerPort: 80 # The port the Hello World app runs in the container
+          - containerPort: 80  # The port the Hello World app runs in the container
         env:
           - name: API_KEY
             valueFrom:
               secretKeyRef:
                 name: hello-world-secrets
                 key: API_KEY
-          
           - name: DATABASE_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: hello-world-secrets
                 key: DATABASE_PASSWORD
-
           - name: STRIPE_SECRET_KEY
             valueFrom:
               secretKeyRef:
                 name: hello-world-secrets
                 key: STRIPE_SECRET_KEY
-
           - name: APP_ENV
             valueFrom:
               secretKeyRef:
                 name: hello-world-secrets
                 key: APP_ENV
-
           - name: FEATURE_FLAG_BETA
             valueFrom:
               secretKeyRef:
