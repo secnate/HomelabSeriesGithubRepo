@@ -9,6 +9,6 @@ spec:
     app: helloworld-app
   type: NodePort
   ports:
-  - protocol: TCP
-    port: 80          # Port the service exposes
-    targetPort: 5000  # Port on the pods to forward traffic to
+    - protocol: TCP
+      port: 80          # Port the service exposes
+      targetPort: 5000  # Port on the pods to forward traffic to

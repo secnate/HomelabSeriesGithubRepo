@@ -1,6 +1,6 @@
 ---
 # YAML For Configuring the HashiCorp Vault Instance
-# Documentation is from the following page: 
+# Documentation is from the following page:
 # https://github.com/hashicorp/vault-helm/blob/main/values.yaml
 server:
   dev:
