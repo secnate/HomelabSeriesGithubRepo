@@ -1,14 +1,15 @@
 name: Homelab #16 CI – Build, Scan, Lint & Update Manifest
-
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-    - 'Homelab16 - GitOps and Secrets Management/**'
+      - 'Homelab16 - GitOps and Secrets Management/**'
   pull_request:
-    branches: [main]
+    branches:
+      - main
     paths:
-    - 'Homelab16 - GitOps and Secrets Management/**'
+      - 'Homelab16 - GitOps and Secrets Management/**'
 
 jobs:
   lint-built-scan:
