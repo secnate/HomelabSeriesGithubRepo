@@ -130,5 +130,5 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add kubernetes_manifests/helloworld-deployment.yaml
-          git commit -m "ci(homelab-16): bump image tag to ${{ github.sha }} after build & scan" || echo "No changes"
+          git commit -m "ci(homelab-16): bump image tag to ${{ github.sha }} [skip ci]" || echo "No changes"
           git push origin HEAD:main
