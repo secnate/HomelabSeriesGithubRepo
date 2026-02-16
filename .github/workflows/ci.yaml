@@ -94,7 +94,7 @@ jobs:
           context: "Homelab16 - GitOps and Secrets Management/app"
           file: "Homelab16 - GitOps and Secrets Management/app/Dockerfile"
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/hello-world-app:${{ github.sha }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/sample_hello_world_flask_app:${{ github.sha }}
 
       # ====================================================================
       # Trivy Scan to Flag Vulnerabilities (AFTER image is built)
@@ -103,7 +103,7 @@ jobs:
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ secrets.DOCKER_USERNAME }}/hello-world-app:${{ github.sha }}'
+          image-ref: '${{ secrets.DOCKER_USERNAME }}/sample_hello_world_flask_app:${{ github.sha }}'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -117,7 +117,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         working-directory: "Homelab16 - GitOps and Secrets Management/app/kubernetes_manifests"
         run: |
-          sed -i "s|image: .*hello-world-app:.*|image: ${{ secrets.DOCKER_USERNAME }}/hello-world-app:${{ github.sha }}|" \
+          sed -i "s|image: .*sample_hello_world_flask_app:.*|image: ${{ secrets.DOCKER_USERNAME }}/sample_hello_world_flask_app:${{ github.sha }}|" \
             helloworld-deployment.yaml
 
       # ====================================================================
