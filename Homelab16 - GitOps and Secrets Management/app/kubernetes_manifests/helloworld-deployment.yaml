@@ -21,7 +21,7 @@ spec:
       containers:
         - name: helloworld-app
           # My container image
-          image: nathanpavl/sample_hello_world_flask_app:6acc2aeccd395fbd237095c3fba1e715ea32ba5a
+          image: nathanpavl/sample_hello_world_flask_app:2a5d87edecf4eee3044bd7ccb70e2b507154ce72
           ports:
             # The port the Hello World app runs in the container
             - containerPort: 80
