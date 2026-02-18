@@ -38,6 +38,15 @@ kubectl wait --for=condition=ready pod/vault-0 -n vault --timeout=60s || {
 echo -e "${GREEN}→ Vault is up and running!${NC}"
 echo
 echo
+echo
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CREATE THE "APP" NAMESPACE
+# ══════════════════════════════════════════════════════════════════════════════
+# After Vault checks, before ESO installation
+echo -e "${YELLOW}→ Creating 'app' namespace...${NC}"
+kubectl create namespace app --dry-run=client -o yaml | kubectl apply -f -
 
 # ══════════════════════════════════════════════════════════════════════════════
 # EXTERNAL SECRETS OPERATOR SETUP
@@ -94,8 +103,16 @@ echo -e "${GREEN}→ External Secrets Operator is ready!${NC}"
 # and ExternalSecret resources before they're created. The webhook service needs
 # to have endpoints registered before we can apply these resources, otherwise
 # kubectl will fail with "no endpoints available" errors.
+#
+# Even though the webhook pod is running, it takes a few seconds for:
+# 1. The pod to become ready
+# 2. The Service endpoints to be registered
+# 3. The API server to recognize the webhook is available
+#
+# This wait loop ensures the webhook is fully operational before proceeding.
 # ══════════════════════════════════════════════════════════════════════════════
 
+echo -e "${GREEN}→ External Secrets Operator is ready!${NC}"
 echo -e "${YELLOW}→ Waiting for webhook service endpoints to be ready...${NC}"
 
 for i in {1..30}; do
@@ -125,8 +142,7 @@ echo
 
 # Step 1: Enable the Kubernetes auth method in Vault
 echo -e "${YELLOW}→ Enabling Kubernetes auth method in Vault...${NC}"
-kubectl exec vault-0 -n vault -- vault auth enable kubernetes 2>/dev/null || \
-  echo -e "${BLUE}  (Kubernetes auth already enabled)${NC}"
+kubectl exec vault-0 -n vault -- vault auth enable kubernetes
 
 # Step 2: Configure HOW Vault should talk to Kubernetes to validate tokens
 echo -e "${YELLOW}→ Configuring Kubernetes auth in Vault...${NC}"
@@ -140,8 +156,17 @@ kubectl exec vault-0 -n vault -- vault write auth/kubernetes/config \
 # ══════════════════════════════════════════════════════════════════════════════
 # A policy is like a set of permissions. It defines WHAT paths in Vault can be
 # accessed and WHAT actions (read, write, delete, etc.) are allowed.
+#
+# In this case, we're creating a policy that allows READ-ONLY access to our
+# app secrets stored at secret/apps/hello-world/*
+#
+# NOTE: This MUST be created BEFORE the role that references it!
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Vault policy creation: allows ESO to read secrets under secret/apps/hello-world/*
+# This pattern (heredoc + kubectl exec) is a standard way to pipe multi-line content
+# into Vault CLI from inside a pod. See Vault docs: https://developer.hashicorp.com/vault/docs/auth/kubernetes
+# and community examples for why -it or cat | -i is used to avoid stdin issues.
 echo -e "${YELLOW}→ Creating Vault policy 'demo-policy'...${NC}"
 kubectl exec -it vault-0 -n vault -- vault policy write demo-policy - <<EOF
 path "secret/data/apps/hello-world/*" {
@@ -159,9 +184,13 @@ EOF
 # A role connects:
 # 1. WHO can authenticate (which service accounts in which namespaces)
 # 2. WHAT they can access (which policies they get)
+#
+# IMPORTANT: The service account and namespace must match what's used in the
+# SecretStore resource. If your SecretStore is in 'default' namespace using
+# the 'default' service account, then use those values here.
 # ══════════════════════════════════════════════════════════════════════════════
 
-echo -e "${YELLOW}→ Creating Vault role 'demo-role'...${NC}"
+echo -e "${YELLOW}→ Creating Vault role 'demo-role'..${NC}"
 kubectl exec vault-0 -n vault -- vault write auth/kubernetes/role/demo-role \
   bound_service_account_names=default \
   bound_service_account_namespaces=app \
@@ -172,35 +201,53 @@ echo -e "${GREEN}→ Vault Kubernetes authentication configured successfully!${N
 echo
 
 # ══════════════════════════════════════════════════════════════════════════════
-# NOTE: ArgoCD Will Deploy SecretStore and ExternalSecret
+# APPLY SECRETSTORE AND EXTERNALSECRET RESOURCES
 # ══════════════════════════════════════════════════════════════════════════════
-# In the GitOps approach, we do NOT manually apply SecretStore or ExternalSecret
-# resources here. Instead, ArgoCD will automatically deploy them from Git when
-# the ArgoCD Application is created in the next step (setup_app_in_argocd.sh).
-#
-# The SecretStore and ExternalSecret manifests should be in:
-#   app/kubernetes_manifests/secretstore.yaml
-#   app/kubernetes_manifests/externalsecret.yaml
-#
-# ArgoCD will:
-# 1. Watch that directory in Git
-# 2. Deploy all manifests (Deployment, Service, SecretStore, ExternalSecret)
-# 3. Keep them in sync automatically
+# SecretStore: Defines the connection to Vault (provider config).
+# ExternalSecret: Defines which Vault secrets to sync into a Kubernetes Secret.
 # ══════════════════════════════════════════════════════════════════════════════
 
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}Note: SecretStore and ExternalSecret will be deployed by ArgoCD${NC}"
-echo -e "${BLUE}      from app/kubernetes_manifests/ when the Application is created${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}→ Applying SecretStore for Vault connection...${NC}"
+kubectl apply -f "./scripts/setup_scripts/configuration_yamls/vault-secret-store.yml"
+
+echo -e "${YELLOW}→ Applying ExternalSecret to sync demo secrets...${NC}"
+kubectl apply -f "./scripts/setup_scripts/configuration_yamls/external-secret.yml"
+
+# Wait a moment for resources to initialize
+sleep 5
+
+# ══════════════════════════════════════════════════════════════════════════════
+# VERIFY THE SETUP
+# ══════════════════════════════════════════════════════════════════════════════
+
+echo
+echo -e "${YELLOW}→ Verifying setup...${NC}"
 echo
 
+# Check SecretStore status
+echo -e "${BLUE}  SecretStore status:${NC}"
+kubectl get secretstore vault-backend -n app 2>/dev/null || \
+  echo -e "${RED}    ✗ SecretStore not found${NC}"
+
+# Check ExternalSecret status
+echo -e "${BLUE}  ExternalSecret status:${NC}"
+kubectl get externalsecret hello-world-external-secret -n app 2>/dev/null || \
+  echo -e "${RED}    ✗ ExternalSecret not found${NC}"
+
+# Check if Kubernetes Secret was created
+echo -e "${BLUE}  Kubernetes Secret:${NC}"
+if kubectl get secret hello-world-secrets -n app >/dev/null 2>&1; then
+  echo -e "${GREEN}    ✓ Secret 'hello-world-secrets' exists!${NC}"
+  echo -e "${BLUE}    Secret contains these keys:${NC}"
+  kubectl get secret hello-world-secrets -n app -o jsonpath='{.data}' | \
+    grep -o '"[^"]*":' | tr -d '":' | sed 's/^/      - /'
+else
+  echo -e "${RED}    ✗ Secret 'hello-world-secrets' not found!${NC}"
+  echo -e "${RED}    Check ExternalSecret status: kubectl describe externalsecret hello-world-external-secret -n app${NC}"
+fi
+
+echo
 echo -e "${GREEN}===================================================================="
 echo " External Secrets Operator setup complete!"
 echo "===================================================================="
 echo -e "${NC}"
-echo -e "${YELLOW}Next steps:${NC}"
-echo -e "  1. Run: ./setup_argocd.sh"
-echo -e "  2. Run: ./setup_app_in_argocd.sh"
-echo -e "  3. ArgoCD will deploy SecretStore + ExternalSecret automatically"
-echo -e "  4. ESO will sync secrets from Vault to Kubernetes"
-echo

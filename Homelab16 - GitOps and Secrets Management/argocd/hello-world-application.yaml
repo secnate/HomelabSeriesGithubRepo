@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+   name: hello-world-app
+   namespace: argocd
+   labels:
+    name: hello-world-app
+spec:
+  project: homelab16
+  # Source: Where to get the manifests
+  source:
+    repoURL: https://github.com/secnate/HomelabSeriesGithubRepo
+    targetRevision: main
+    path: Homelab16 - GitOps and Secrets Management/app/kubernetes_manifests
+  # Destination: Where to deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: app
+  # Sync Policy: Auto-deploy when Git changes
+  syncPolicy:
+    automated:
+      prune: true      # Auto-delete removed resources
+      selfHeal: true   # Auto-fix if someone manually changes cluster
+    syncOptions:
+      # Namespace Auto-Creation ensures that namespace specified as
+      # the application destination exists in the destination cluster.
+      - CreateNamespace=true
