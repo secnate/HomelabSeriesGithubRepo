@@ -19,7 +19,7 @@ helm repo update >/dev/null
 helm install vault hashicorp/vault \
   -n vault \
   --create-namespace \
-  --values ./app/kubernetes_manifests/vault-config.yml >/dev/null
+  --values ./vault/vault-config.yml >/dev/null
 
 echo -e "${GREEN}→ Vault Helm chart installed. Waiting for pod to be ready...${NC}"
 
