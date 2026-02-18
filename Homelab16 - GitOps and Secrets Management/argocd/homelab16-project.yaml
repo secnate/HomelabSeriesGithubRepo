@@ -6,17 +6,14 @@ metadata:
   namespace: argocd
 spec:
   description: Homelab 16 GitOps Project for Secrets Management and CD Pipeline
-  
   # Source repositories that applications in this project can pull from
   sourceRepos:
-  - 'https://github.com/secnate/HomelabSeriesGithubRepo'
-  
+    - 'https://github.com/secnate/HomelabSeriesGithubRepo'
   # Destinations where applications can be deployed
   destinations:
-  - namespace: '*'
-    server: https://kubernetes.default.svc
-  
+    - namespace: '*'
+      server: https://kubernetes.default.svc
   # Allow all cluster resources (for homelab simplicity)
   clusterResourceWhitelist:
-  - group: '*'
-    kind: '*'
+    - group: '*'
+      kind: '*'
