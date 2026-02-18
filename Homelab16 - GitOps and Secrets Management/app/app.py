@@ -1,4 +1,3 @@
-# Inserted In Comment To Trigger CI Pipeline Changes
 from flask import Flask, render_template
 import os
 import socket
