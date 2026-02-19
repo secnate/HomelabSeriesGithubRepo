@@ -91,7 +91,7 @@ kubectl get application hello-world-app -n argocd
 # Wait for Deployment to Be Ready
 # ══════════════════════════════════════════════════════════════════════════════
 echo -e "${YELLOW}→ Waiting for deployment to be ready (up to 120 seconds)...${NC}"
-kubectl wait --for=condition=Available deployment/hello-world-app -n app --timeout=120s || {
+kubectl wait --for=condition=Available deployment/hello-world-app-deployment -n app --timeout=120s || {
     echo -e "${RED}✗ Deployment not ready after timeout${NC}"
     echo -e "${YELLOW}→ Current pod status:${NC}"
     kubectl get pods -n app
@@ -108,6 +108,7 @@ kubectl get pods -n app
 # ══════════════════════════════════════════════════════════════════════════════
 # Set Up Port Forwarding for the Application
 # ══════════════════════════════════════════════════════════════════════════════
+sleep 30
 echo -e "${YELLOW}→ Setting up port forwarding for the application...${NC}"
 kubectl port-forward -n app svc/helloworld-app 5000:80 > /dev/null 2>&1 &
 sleep 3

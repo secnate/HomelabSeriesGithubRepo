@@ -1,4 +1,3 @@
-# Sample Change to the App to Get The CI Pipeline Activated
 from flask import Flask, render_template
 import os
 import socket
@@ -24,7 +23,7 @@ def home():
     # Per https://flask.palletsprojects.com/en/stable/api/#flask.render_template documentation,
     # the 'index.html' is the name of the template to render, while the subsequent variables
     # (cloud, hostname, version) are "context" variables to make available in the template
-    return render_template('index.html', cloud=cloud_provider, hostname=hostname, version='1.0', **extracted_secrets)
+    return render_template('index.html', cloud=cloud_provider, hostname=hostname, version='2.0', **extracted_secrets)
 
 @app.route('/health')
 def health():
