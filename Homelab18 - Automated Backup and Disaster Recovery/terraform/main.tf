@@ -9,7 +9,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -31,6 +31,7 @@ provider "aws" {
 resource "aws_s3_bucket" "primary" {
   bucket = var.primary_bucket_name
 }
+
 # Bucket Versioning Is Enabled
 # This Neeeded To Be Done Because "Object Lock works only in buckets that have S3 Versioning enabled" 
 # Per https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html
@@ -112,7 +113,7 @@ resource "aws_s3_bucket_versioning" "secondary" {
 
 resource "aws_s3_bucket_object_lock_configuration" "secondary_bucket_object_lock" {
   provider = aws.Disaster_Recovery_Region
-  
+
   bucket = aws_s3_bucket.secondary.id
 
   rule {
@@ -168,60 +169,74 @@ resource "aws_s3_bucket_public_access_block" "secondary" {
 # Preparation For The Final Replication Rule
 #
 ##########################################################
-
 # IAM role for replication
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["s3.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
 resource "aws_iam_role" "replication" {
     name     = "s3-replication-role"
 
-    assume_role_policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [{
-            Effect = "Allow"
-            Principal = {
-                Service = "s3.amazonaws.com"
-            }
-            Action = "sts:AssumeRole"
-        }]
-    })
+    assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+data "aws_iam_policy_document" "replication" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:GetReplicationConfiguration",
+      "s3:ListBucket",
+    ]
+
+    resources = [aws_s3_bucket.primary.arn]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObjectVersionForReplication",
+      "s3:GetObjectVersionAcl",
+      "s3:GetObjectVersionTagging",
+    ]
+
+    resources = ["${aws_s3_bucket.primary.arn}/*"]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:ReplicateObject",
+      "s3:ReplicateDelete",
+      "s3:ReplicateTags",
+    ]
+
+    resources = ["${aws_s3_bucket.secondary.arn}/*"]
+  }
 }
 
 # IAM policy granting replication permissions to the buckets
-resource "aws_iam_role_policy" "replication" {
-  name     = "s3-replication-policy"
-  role     = aws_iam_role.replication.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetReplicationConfiguration",
-          "s3:ListBucket"
-        ]
-        Resource = aws_s3_bucket.primary.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObjectVersionForReplication",
-          "s3:GetObjectVersionAcl",
-          "s3:GetObjectVersionTagging"
-        ]
-        Resource = "${aws_s3_bucket.primary.arn}/*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:ReplicateObject",
-          "s3:ReplicateDelete",
-          "s3:ReplicateTags"
-        ]
-        Resource = "${aws_s3_bucket.secondary.arn}/*"
-      }
-    ]
-  })
+resource "aws_iam_policy" "replication" {
+  name   = "s3-replication-policy"
+  policy = data.aws_iam_policy_document.replication.json
 }
+
+resource "aws_iam_role_policy_attachment" "replication" {
+  role       = aws_iam_role.replication.name
+  policy_arn = aws_iam_policy.replication.arn
+}
+
 ##########################################################
 # The replication rule itself — tells S3 to copy everything
 # from the primary bucket into the DR bucket using the role above.
@@ -237,6 +252,22 @@ resource "aws_s3_bucket_replication_configuration" "primary_to_dr" {
     rule {
         id = "replicate-all"
         status = "Enabled"
+
+        // A delete marker is a soft delete — S3 places a placeholder on a versioned object instead
+        // of permanently removing it, hiding it from normal listings while preserving prior versions
+        delete_marker_replication {
+          status = "Enabled"
+        }
+
+        filter {
+          // Not applying any filter due to the following line in the Terraform documentation
+          //
+          // "Replication to multiple destination buckets requires that priority is specified 
+          //  in the rule object. If the corresponding rule requires no filter, an empty 
+          //  configuration block filter {} must be specified."
+          //
+          // Documentation Link: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_replication_configuration
+        }
 
         destination {
             bucket = aws_s3_bucket.secondary.arn
