@@ -190,6 +190,8 @@ resource "aws_iam_role" "replication" {
 }
 
 data "aws_iam_policy_document" "replication" {
+
+  // Statement for the primary bucket
   statement {
     effect = "Allow"
 
@@ -208,11 +210,22 @@ data "aws_iam_policy_document" "replication" {
       "s3:GetObjectVersionForReplication",
       "s3:GetObjectVersionAcl",
       "s3:GetObjectVersionTagging",
+
+      // The following are to take into account the object
+      // lock that is on both the primary and secondary buckets
+      "s3:GetObjectLegalHold",
+      "s3:GetObjectRetention",
+      "s3:GetBucketObjectLockConfiguration",
+      "s3:GetReplicationConfiguration",
+      "s3:GetBucketVersioning",
+      "s3:GetObjectVersion",
+      "s3:BypassGovernanceRetention"
     ]
 
     resources = ["${aws_s3_bucket.primary.arn}/*"]
   }
 
+  // Statement for the secondary bucket
   statement {
     effect = "Allow"
 
@@ -220,6 +233,12 @@ data "aws_iam_policy_document" "replication" {
       "s3:ReplicateObject",
       "s3:ReplicateDelete",
       "s3:ReplicateTags",
+
+      // The following are to take into account the object
+      // lock that is on both the primary and secondary buckets
+      "s3:BypassGovernanceRetention",
+      "s3:PutObjectLegalHold",
+      "s3:PutObjectRetention"
     ]
 
     resources = ["${aws_s3_bucket.secondary.arn}/*"]
