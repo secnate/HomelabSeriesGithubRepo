@@ -11,7 +11,7 @@
 
 Backups are taken daily at 2AM via systemd timer on web1.
 Data is encrypted client-side by restic before leaving the machine.
-Stored in AWS S3 primary bucket (us-east-1) and automatically 
+The data backups are stored in AWS S3 primary bucket (us-east-1) and automatically 
 replicated to DR bucket (us-east-2) via cross-region replication.
 
 ---
@@ -160,14 +160,14 @@ journalctl -u restic-backup.service --no-pager | more
 
 To filter for failures only:
 ```bash
-journalctl -u restic-backup.service --no-pager | grep -i "failed\|error"
+journalctl -u restic-backup.service --no-pager | grep -i "failed|error"
 ```
 
 ---
 
 ## Checking Backup Alerts
 
-Backup success and failure is monitored via healthchecks.io.
+Backup success and failure is monitored via **healthchecks.io**.
 A failure alert will fire if the backup service does not 
 successfully ping healthchecks.io within the expected window.
 Log in to healthchecks.io to check the status dashboard.
